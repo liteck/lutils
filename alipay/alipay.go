@@ -21,7 +21,6 @@ type alipayApiInterface interface {
 	Run() error
 	sign(s string) (sign string, err error)
 	verifySign(in string, origin_sign string) bool
-	request(m map[string]interface{}) error
 	packageBizContent() string
 	getApiMethod() string
 	getApiMethodName() string
@@ -102,8 +101,6 @@ func (a *AlipayApi) buildRequestParams() map[string]interface{} {
 		}
 		data[key] = value
 	}
-	fmt.Println(data)
-
 	return data
 }
 
@@ -114,7 +111,6 @@ func (a *AlipayApi) mTos(m map[string]interface{}) string {
 		sorted_keys = append(sorted_keys, k)
 	}
 	sort.Strings(sorted_keys)
-	fmt.Println(sorted_keys)
 
 	//对key=value的键值对用&连接起来，略过空值
 	var signStrings string
@@ -129,7 +125,6 @@ func (a *AlipayApi) mTos(m map[string]interface{}) string {
 	} else {
 		signStrings = signStrings[:len(signStrings)-1]
 	}
-	fmt.Println(signStrings)
 	return signStrings
 }
 
@@ -160,23 +155,25 @@ func (a *AlipayApi) verifySign(in string, origin_sign string) bool {
 	return true
 }
 
-func (a *AlipayApi) request(m map[string]interface{}) error {
+func (a *AlipayApi) request(m map[string]interface{}) (string, error) {
 	http_request := httplib.Post("https://openapi.alipay.com/gateway.do")
+	tmp_string := ""
 	for k, _ := range m {
 		value := fmt.Sprintf("%v", m[k])
 		if value != "" {
 			http_request.Param(k, value)
+			tmp_string = tmp_string + k + "=" + value + "\t"
 		}
 	}
+	fmt.Println(fmt.Sprintf("==[请求参数]==[%s]", tmp_string))
 	var string_result string
 	if v, err := http_request.String(); err != nil {
-		return err
+		return "", err
 	} else {
 		string_result = a.convertGBK2UTF(v)
 
 	}
-	fmt.Println(string_result)
-	return nil
+	return string_result, nil
 }
 
 func (a *AlipayApi) getApiMethod() string {
@@ -216,6 +213,9 @@ func (a *AlipayApi) init(app_id string) error {
 }
 
 func (a *AlipayApi) Run() error {
+	fmt.Println("=====================ALIPAY REQUEST START=====================")
+	fmt.Println(fmt.Sprintf("==[调用方法]==[%s]:[%s]", a.MethodName, a.Method))
+
 	if err := a.params.valid(); err != nil {
 		fmt.Println(err.Error())
 		return err
@@ -223,22 +223,26 @@ func (a *AlipayApi) Run() error {
 	m := a.buildRequestParams()
 	//做请求参数的签名
 	__sign := ""
-	if v, err := a.sign(a.mTos(m)); err != nil {
+	tobe_sign := a.mTos(m)
+	fmt.Println(fmt.Sprintf("==[准备签名]==[%s]", tobe_sign))
+	if v, err := a.sign(tobe_sign); err != nil {
 		return err
 	} else if len(v) == 0 {
 		return ErrSign
 	} else {
 		__sign = v
 	}
-	fmt.Println(__sign)
+	fmt.Println(fmt.Sprintf("==[签名结果]==[%s]", __sign))
 	m["sign"] = __sign
 	//准备请求
-	if err := a.request(m); err != nil {
+	result_string := ""
+	if v, err := a.request(m); err != nil {
 		return err
 	} else {
-
+		result_string = v
+		fmt.Println(fmt.Sprintf("==[响应结果]==[%s]", result_string))
 	}
-
+	fmt.Println("=====================ALIPAY REQUEST END=====================")
 	return nil
 }
 

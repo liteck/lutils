@@ -4,7 +4,7 @@
 **/
 package alipay
 
-import "fmt"
+// import "fmt"
 
 /**
 菜品类型查询
@@ -25,7 +25,6 @@ func (k *koubei_marketing_data_dishdiagnosetype_batchquery) SetAppId(app_id stri
 }
 
 func (k *koubei_marketing_data_dishdiagnosetype_batchquery) packageBizContent() string {
-	fmt.Println("koubei_marketing_data_dishdiagnosetype_batchquery PackageBizContent")
 	return ""
 }
 
@@ -38,6 +37,5 @@ func (k *koubei_marketing_data_dishdiagnosetype_batchquery) getApiMethodName() s
 }
 
 func init() {
-	fmt.Println("register koubei_marketing_data_dishdiagnosetype_batchquery")
 	registerApi(new(koubei_marketing_data_dishdiagnosetype_batchquery))
 }

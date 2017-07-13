@@ -18,17 +18,14 @@ import (
 
 //支付宝api接口的抽象方法
 type alipayApiInterface interface {
-	Init(app_id string)
-	//api接口运行入口
 	Run() error
-	//签名
 	sign(s string) (sign string, err error)
-	//验证签名
 	verifySign(in string, origin_sign string) bool
-	//接口请求
 	request(m map[string]interface{}) error
-	//实现bizcontent数据结构
 	packageBizContent() string
+	getApiMethod() string
+	getApiMethodName() string
+	SetAppId(app_id string)
 }
 
 type apis map[string]alipayApiInterface
@@ -64,6 +61,7 @@ type AlipayApi struct {
 	params     requestParams
 	Method     string
 	MethodName string
+	BizContent string
 }
 
 /**
@@ -201,7 +199,10 @@ func (a *AlipayApi) getApiName() string {
 	}
 }
 
-func (a *AlipayApi) Init(app_id string) {
+func (a *AlipayApi) SetAppId(app_id string) {
+}
+
+func (a *AlipayApi) init(app_id string) error {
 	if len(app_id) == 0 {
 		return ErrAppIdNil
 	}
@@ -211,6 +212,7 @@ func (a *AlipayApi) Init(app_id string) {
 	} else {
 		a.params.AppId = s.AppId
 	}
+	return nil
 }
 
 func (a *AlipayApi) Run() error {

@@ -16,15 +16,25 @@ type koubei_marketing_data_dishdiagnosetype_batchquery struct {
 	AlipayApi
 }
 
-func (k *koubei_marketing_data_dishdiagnosetype_batchquery) Init(app_id string) {
+func (k *koubei_marketing_data_dishdiagnosetype_batchquery) SetAppId(app_id string) {
 	k.params.AppId = app_id
-	k.params.Method = "koubei.marketing.data.dishdiagnosetype.batchquery"
-	k.params.MethodName = "菜品类型查询"
+	k.Method = k.getApiMethod()
+	k.MethodName = k.getApiMethodName()
+	k.BizContent = k.packageBizContent()
+	k.init(app_id)
 }
 
 func (k *koubei_marketing_data_dishdiagnosetype_batchquery) packageBizContent() string {
 	fmt.Println("koubei_marketing_data_dishdiagnosetype_batchquery PackageBizContent")
 	return ""
+}
+
+func (k *koubei_marketing_data_dishdiagnosetype_batchquery) getApiMethod() string {
+	return "koubei.marketing.data.dishdiagnosetype.batchquery"
+}
+
+func (k *koubei_marketing_data_dishdiagnosetype_batchquery) getApiMethodName() string {
+	return "菜品类型查询"
 }
 
 func init() {

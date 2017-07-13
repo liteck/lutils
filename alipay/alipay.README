@@ -1,0 +1,9 @@
+支付宝开放平台工具集合
+https://docs.open.alipay.com/api
+
+按照支付宝模块进行模块拆分。并支持沙盒模式。
+具体的沙盒模式情
+
+2017-07-11 00.00.01
+营销API
+	1.koubei.marketing.data.dishdiagnosetype.batchquery(菜品类型查询)

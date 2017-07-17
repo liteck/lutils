@@ -20,10 +20,11 @@ import (
 
 //支付宝api接口的抽象方法
 type alipayApiInterface interface {
-	Run() error
+	Run() (string, error)
 	packageBizContent() string
 	apiMethod() string
 	apiName() string
+	SetAppId(app_id string) error
 }
 
 type apis map[string]alipayApiInterface
@@ -235,14 +236,14 @@ func (a *AlipayApi) SetGrantType(grant_type string) {
 	a.params.GrantType = grant_type
 }
 
-func (a *AlipayApi) Run() error {
+func (a *AlipayApi) Run() (string, error) {
 	logs.DEBUG("=====================ALIPAY REQUEST START=====================")
 	logs.DEBUG(fmt.Sprintf("==[沙盒模式]==[%v]", conf.SandBoxEnable))
 	logs.DEBUG(fmt.Sprintf("==[调用方法]==[%s]:[%s]", a.apiName(), a.apiMethod()))
 
 	if err := a.params.valid(); err != nil {
 		fmt.Println(err.Error())
-		return err
+		return "", err
 	}
 	m := a.buildRequestParams()
 	//做请求参数的签名
@@ -250,9 +251,9 @@ func (a *AlipayApi) Run() error {
 	tobe_sign := a.mTos(m)
 	logs.DEBUG(fmt.Sprintf("==[准备签名]==[%s]", tobe_sign))
 	if v, err := a.sign(tobe_sign); err != nil {
-		return err
+		return "", err
 	} else if len(v) == 0 {
-		return ErrSign
+		return "", ErrSign
 	} else {
 		__sign = v
 	}
@@ -261,7 +262,7 @@ func (a *AlipayApi) Run() error {
 	//准备请求
 	result_string := ""
 	if v, err := a.request(m); err != nil {
-		return err
+		return "", err
 	} else {
 		result_string = v
 		logs.DEBUG(fmt.Sprintf("==[响应结果]==[GBK 编码]:[%s]", result_string))
@@ -269,13 +270,13 @@ func (a *AlipayApi) Run() error {
 	//解析结果
 	resp_map := map[string]interface{}{}
 	if err := json.Unmarshal([]byte(result_string), &resp_map); err != nil {
-		return err
+		return "", err
 	}
 	//看看有没有sign
 	if v, ok := resp_map["sign"].(string); ok {
 		//有则校验签名
 		if pass := a.verifySign(result_string, v); !pass {
-			return ErrVerifySign
+			return "", ErrVerifySign
 		}
 	}
 	//转码
@@ -283,5 +284,5 @@ func (a *AlipayApi) Run() error {
 	logs.DEBUG(fmt.Sprintf("==[响应结果]==[UTF 编码]:[%s]", result_string))
 	//验证签名
 	logs.DEBUG("=====================ALIPAY REQUEST END=====================")
-	return nil
+	return result_string, nil
 }

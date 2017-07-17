@@ -22,8 +22,8 @@ import (
 type alipayApiInterface interface {
 	Run() error
 	packageBizContent() string
-	getApiMethod() string
-	getApiName() string
+	apiMethod() string
+	apiName() string
 	SetParams(m map[string]string) error
 }
 
@@ -40,14 +40,18 @@ func (a apis) get(k string) (alipayApiInterface, bool) {
 
 var apiLst apis
 
+func init() {
+	apiLst = apis{}
+}
+
 func registerApi(v alipayApiInterface) {
-	apiLst.put(v.getApiMethod(), v)
+	apiLst.put(v.apiMethod(), v)
 }
 
 func GetSupportApis() []string {
 	ret := []string{}
 	for _, v := range apiLst {
-		r := "\n" + v.getApiName() + ":" + v.getApiMethod()
+		r := "\n" + v.apiName() + ":" + v.apiMethod()
 		ret = append(ret, r)
 	}
 	return ret
@@ -59,8 +63,9 @@ func GetApi(k string) (alipayApiInterface, bool) {
 
 type AlipayApi struct {
 	params     requestParams
-	MethodName string
 	BizContent string
+	Method     string
+	MethodName string
 }
 
 /**
@@ -81,7 +86,7 @@ func (a *AlipayApi) convertGBK2UTF(gbk string) (utf string) {
 func (a *AlipayApi) buildRequestParams() map[string]interface{} {
 	biz_content := a.packageBizContent()
 	a.params.BizContent = biz_content
-	a.params.Method = a.getApiMethod()
+	a.params.Method = a.apiMethod()
 
 	t := reflect.TypeOf(a.params)
 	v := reflect.ValueOf(a.params)
@@ -181,32 +186,30 @@ func (a *AlipayApi) request(m map[string]interface{}) (string, error) {
 	return string_result, nil
 }
 
-func (a *AlipayApi) getApiMethod() string {
-	if len(a.params.Method) > 0 {
-		return a.params.Method
-	} else {
-		return ErrMethodNotSupport.Error()
+func (a *AlipayApi) apiMethod() string {
+	if len(a.Method) > 0 {
+		return a.Method
 	}
+	return ErrMethodNotSupport.Error()
+}
+
+func (a *AlipayApi) apiName() string {
+	if len(a.MethodName) > 0 {
+		return a.MethodName
+	}
+	return ErrMethodNameNil.Error()
 }
 
 func (a *AlipayApi) setApiMethod(method string) {
-	a.params.Method = method
-}
-
-func (a *AlipayApi) packageBizContent() string {
-	return ""
-}
-
-func (a *AlipayApi) getApiName() string {
-	if len(a.MethodName) > 0 {
-		return a.MethodName
-	} else {
-		return ErrMethodNameNil.Error()
-	}
+	a.Method = method
 }
 
 func (a *AlipayApi) setApiName(name string) {
 	a.MethodName = name
+}
+
+func (a *AlipayApi) packageBizContent() string {
+	return ""
 }
 
 func (a *AlipayApi) SetParams(m map[string]string) error {
@@ -239,7 +242,7 @@ func (a *AlipayApi) SetParams(m map[string]string) error {
 func (a *AlipayApi) Run() error {
 	logs.DEBUG("=====================ALIPAY REQUEST START=====================")
 	logs.DEBUG(fmt.Sprintf("==[沙盒模式]==[%v]", conf.SandBoxEnable))
-	logs.DEBUG(fmt.Sprintf("==[调用方法]==[%s]:[%s]", a.MethodName, a.getApiMethod()))
+	logs.DEBUG(fmt.Sprintf("==[调用方法]==[%s]:[%s]", a.apiName(), a.apiMethod()))
 
 	if err := a.params.valid(); err != nil {
 		fmt.Println(err.Error())
@@ -285,8 +288,4 @@ func (a *AlipayApi) Run() error {
 	//验证签名
 	logs.DEBUG("=====================ALIPAY REQUEST END=====================")
 	return nil
-}
-
-func init() {
-	apiLst = apis{}
 }

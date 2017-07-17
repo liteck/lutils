@@ -14,11 +14,17 @@ type alipay_system_oauth_token struct {
 }
 
 func (a *alipay_system_oauth_token) SetParams(m map[string]string) error {
-	a.AlipayApi.setApiMethod("alipay.system.oauth.token")
-	a.AlipayApi.setApiName("换取授权访问令牌")
-	a.BizContent = a.packageBizContent()
-
+	a.setApiMethod(a.apiMethod())
+	a.setApiName(a.apiName())
 	return a.AlipayApi.SetParams(m)
+}
+
+func (k *alipay_system_oauth_token) apiMethod() string {
+	return "alipay.system.oauth.token"
+}
+
+func (k *alipay_system_oauth_token) apiName() string {
+	return "换取授权访问令牌"
 }
 
 func (a *alipay_system_oauth_token) packageBizContent() string {

@@ -15,18 +15,16 @@ type koubei_marketing_data_dishdiagnosetype_batchquery struct {
 }
 
 func (k *koubei_marketing_data_dishdiagnosetype_batchquery) SetParams(m map[string]string) error {
-	k.AlipayApi.setApiMethod("koubei.marketing.data.dishdiagnosetype.batchquery")
-	k.AlipayApi.setApiName("菜品类型查询")
-	k.BizContent = k.packageBizContent()
-
+	k.setApiMethod(k.apiMethod())
+	k.setApiName(k.apiName())
 	return k.AlipayApi.SetParams(m)
 }
 
-func (k *koubei_marketing_data_dishdiagnosetype_batchquery) getApiMethod() string {
+func (k *koubei_marketing_data_dishdiagnosetype_batchquery) apiMethod() string {
 	return "koubei.marketing.data.dishdiagnosetype.batchquery"
 }
 
-func (k *koubei_marketing_data_dishdiagnosetype_batchquery) getApiName() string {
+func (k *koubei_marketing_data_dishdiagnosetype_batchquery) apiName() string {
 	return "菜品类型查询"
 }
 

@@ -24,7 +24,6 @@ type alipayApiInterface interface {
 	packageBizContent() string
 	apiMethod() string
 	apiName() string
-	SetAppId(app_id string) error
 }
 
 type apis map[string]alipayApiInterface
@@ -55,10 +54,6 @@ func GetSupportApis() []string {
 		ret = append(ret, r)
 	}
 	return ret
-}
-
-func GetApi(k string) (alipayApiInterface, bool) {
-	return apiLst.get(k)
 }
 
 type AlipayApi struct {

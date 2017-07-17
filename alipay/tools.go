@@ -13,10 +13,10 @@ type alipay_system_oauth_token struct {
 	AlipayApi
 }
 
-func (a *alipay_system_oauth_token) SetParams(m map[string]string) error {
+func (a *alipay_system_oauth_token) SetAppId(app_id string) error {
 	a.setApiMethod(a.apiMethod())
 	a.setApiName(a.apiName())
-	return a.AlipayApi.SetParams(m)
+	return a.AlipayApi.SetAppId(app_id)
 }
 
 func (k *alipay_system_oauth_token) apiMethod() string {

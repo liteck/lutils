@@ -24,7 +24,6 @@ type alipayApiInterface interface {
 	packageBizContent() string
 	apiMethod() string
 	apiName() string
-	SetParams(m map[string]string) error
 }
 
 type apis map[string]alipayApiInterface
@@ -212,10 +211,8 @@ func (a *AlipayApi) packageBizContent() string {
 	return ""
 }
 
-func (a *AlipayApi) SetParams(m map[string]string) error {
-	if v, ok := m["app_id"]; ok {
-		a.params.AppId = v
-	}
+func (a *AlipayApi) SetAppId(app_id string) error {
+	a.params.AppId = app_id
 	if len(a.params.AppId) == 0 {
 		return ErrAppIdNil
 	}
@@ -223,20 +220,19 @@ func (a *AlipayApi) SetParams(m map[string]string) error {
 	if _, ok := secretLst[a.params.AppId]; !ok {
 		return ErrSecretNil
 	}
-	//有些接口需要
-	if v, ok := m["auth_token"]; ok {
-		a.params.AuthToken = v
-	}
-
-	if v, ok := m["code"]; ok {
-		a.params.Code = v
-	}
-
-	if v, ok := m["grant_type"]; ok {
-		a.params.GrantType = v
-	}
-
 	return nil
+}
+
+func (a *AlipayApi) SetAuthToken(auth_token string) {
+	a.params.AuthToken = auth_token
+}
+
+func (a *AlipayApi) SetAuthCode(code string) {
+	a.params.Code = code
+}
+
+func (a *AlipayApi) SetGrantType(grant_type string) {
+	a.params.GrantType = grant_type
 }
 
 func (a *AlipayApi) Run() error {

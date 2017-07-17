@@ -14,10 +14,10 @@ type koubei_marketing_data_dishdiagnosetype_batchquery struct {
 	AlipayApi
 }
 
-func (k *koubei_marketing_data_dishdiagnosetype_batchquery) SetParams(m map[string]string) error {
+func (k *koubei_marketing_data_dishdiagnosetype_batchquery) SetAppId(app_id string) error {
 	k.setApiMethod(k.apiMethod())
 	k.setApiName(k.apiName())
-	return k.AlipayApi.SetParams(m)
+	return k.AlipayApi.SetAppId(app_id)
 }
 
 func (k *koubei_marketing_data_dishdiagnosetype_batchquery) apiMethod() string {

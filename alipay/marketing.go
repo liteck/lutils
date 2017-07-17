@@ -4,8 +4,6 @@
 **/
 package alipay
 
-// import "fmt"
-
 /**
 菜品类型查询
 koubei.marketing.data.dishdiagnosetype.batchquery

@@ -16,6 +16,7 @@ var (
 	ErrAppIdNil         = errors.New("APPID NIL")
 	ErrSecretNil        = errors.New("SECRET NIL")
 	ErrSign             = errors.New("SIGN ERROR")
+	ErrVerifySign       = errors.New("VERIFY SIGN ERROR")
 )
 
 //公共请求参数

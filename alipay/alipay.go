@@ -6,10 +6,12 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"fmt"
 	"lutils/httplib"
+	"lutils/logs"
 	"lutils/mahonia"
 	"reflect"
 	"sort"
@@ -19,8 +21,6 @@ import (
 //支付宝api接口的抽象方法
 type alipayApiInterface interface {
 	Run() error
-	sign(s string) (sign string, err error)
-	verifySign(in string, origin_sign string) bool
 	packageBizContent() string
 	getApiMethod() string
 	getApiMethodName() string
@@ -165,12 +165,13 @@ func (a *AlipayApi) request(m map[string]interface{}) (string, error) {
 			tmp_string = tmp_string + k + "=" + value + "\t"
 		}
 	}
-	fmt.Println(fmt.Sprintf("==[请求参数]==[%s]", tmp_string))
+
+	logs.DEBUG(fmt.Sprintf("==[请求参数]==[%s]", tmp_string))
 	var string_result string
 	if v, err := http_request.String(); err != nil {
 		return "", err
 	} else {
-		string_result = a.convertGBK2UTF(v)
+		string_result = v
 
 	}
 	return string_result, nil
@@ -213,8 +214,8 @@ func (a *AlipayApi) init(app_id string) error {
 }
 
 func (a *AlipayApi) Run() error {
-	fmt.Println("=====================ALIPAY REQUEST START=====================")
-	fmt.Println(fmt.Sprintf("==[调用方法]==[%s]:[%s]", a.MethodName, a.Method))
+	logs.DEBUG("=====================ALIPAY REQUEST START=====================")
+	logs.DEBUG(fmt.Sprintf("==[调用方法]==[%s]:[%s]", a.MethodName, a.Method))
 
 	if err := a.params.valid(); err != nil {
 		fmt.Println(err.Error())
@@ -224,7 +225,7 @@ func (a *AlipayApi) Run() error {
 	//做请求参数的签名
 	__sign := ""
 	tobe_sign := a.mTos(m)
-	fmt.Println(fmt.Sprintf("==[准备签名]==[%s]", tobe_sign))
+	logs.DEBUG(fmt.Sprintf("==[准备签名]==[%s]", tobe_sign))
 	if v, err := a.sign(tobe_sign); err != nil {
 		return err
 	} else if len(v) == 0 {
@@ -232,7 +233,7 @@ func (a *AlipayApi) Run() error {
 	} else {
 		__sign = v
 	}
-	fmt.Println(fmt.Sprintf("==[签名结果]==[%s]", __sign))
+	logs.DEBUG(fmt.Sprintf("==[签名结果]==[%s]", __sign))
 	m["sign"] = __sign
 	//准备请求
 	result_string := ""
@@ -240,9 +241,25 @@ func (a *AlipayApi) Run() error {
 		return err
 	} else {
 		result_string = v
-		fmt.Println(fmt.Sprintf("==[响应结果]==[%s]", result_string))
+		logs.DEBUG(fmt.Sprintf("==[响应结果]==[GBK 编码]:[%s]", result_string))
 	}
-	fmt.Println("=====================ALIPAY REQUEST END=====================")
+	//解析结果
+	resp_map := map[string]interface{}{}
+	if err := json.Unmarshal([]byte(result_string), &resp_map); err != nil {
+		return err
+	}
+	//看看有没有sign
+	if v, ok := resp_map["sign"].(string); ok {
+		//有则校验签名
+		if pass := a.verifySign(result_string, v); !pass {
+			return ErrVerifySign
+		}
+	}
+	//转码
+	result_string = a.convertGBK2UTF(result_string)
+	logs.DEBUG(fmt.Sprintf("==[响应结果]==[UTF 编码]:[%s]", result_string))
+	//验证签名
+	logs.DEBUG("=====================ALIPAY REQUEST END=====================")
 	return nil
 }
 

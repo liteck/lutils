@@ -8,6 +8,20 @@ import "errors"
 如果没有。。则使用全局配置的。
 **/
 
+type config struct {
+	SandBoxEnable bool
+}
+
+var conf = newConfig()
+
+func newConfig() *config {
+	return &config{SandBoxEnable: false}
+}
+
+func EnableSandBox(enable bool) {
+	conf.SandBoxEnable = enable
+}
+
 type Secret struct {
 	AppId     string
 	Pid       string

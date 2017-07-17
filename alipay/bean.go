@@ -31,6 +31,9 @@ type requestParams struct {
 	Version      string `ali:"version"`
 	AppAuthToken string `ali:"app_auth_token"`
 	BizContent   string `ali:"biz_content"`
+	AuthToken    string `ali:"auth_token"`
+	Code         string `ali:"code"`
+	GrantType    string `ali:"grant_type"`
 }
 
 func (params *requestParams) valid() error {

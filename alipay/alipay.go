@@ -23,8 +23,8 @@ type alipayApiInterface interface {
 	Run() error
 	packageBizContent() string
 	getApiMethod() string
-	getApiMethodName() string
-	SetAppId(app_id string)
+	getApiName() string
+	SetParams(m map[string]string) error
 }
 
 type apis map[string]alipayApiInterface
@@ -46,8 +46,9 @@ func registerApi(v alipayApiInterface) {
 
 func GetSupportApis() []string {
 	ret := []string{}
-	for k, _ := range apiLst {
-		ret = append(ret, k)
+	for _, v := range apiLst {
+		r := "\n" + v.getApiName() + ":" + v.getApiMethod()
+		ret = append(ret, r)
 	}
 	return ret
 }
@@ -58,7 +59,6 @@ func GetApi(k string) (alipayApiInterface, bool) {
 
 type AlipayApi struct {
 	params     requestParams
-	Method     string
 	MethodName string
 	BizContent string
 }
@@ -156,7 +156,11 @@ func (a *AlipayApi) verifySign(in string, origin_sign string) bool {
 }
 
 func (a *AlipayApi) request(m map[string]interface{}) (string, error) {
-	http_request := httplib.Post("https://openapi.alipay.com/gateway.do")
+	url_link := "https://openapi.alipay.com/gateway.do"
+	if conf.SandBoxEnable {
+		url_link = "https://openapi.alipaydev.com/gateway.do"
+	}
+	http_request := httplib.Post(url_link)
 	tmp_string := ""
 	for k, _ := range m {
 		value := fmt.Sprintf("%v", m[k])
@@ -178,11 +182,15 @@ func (a *AlipayApi) request(m map[string]interface{}) (string, error) {
 }
 
 func (a *AlipayApi) getApiMethod() string {
-	if len(a.Method) > 0 {
-		return a.Method
+	if len(a.params.Method) > 0 {
+		return a.params.Method
 	} else {
 		return ErrMethodNotSupport.Error()
 	}
+}
+
+func (a *AlipayApi) setApiMethod(method string) {
+	a.params.Method = method
 }
 
 func (a *AlipayApi) packageBizContent() string {
@@ -197,25 +205,41 @@ func (a *AlipayApi) getApiName() string {
 	}
 }
 
-func (a *AlipayApi) SetAppId(app_id string) {
+func (a *AlipayApi) setApiName(name string) {
+	a.MethodName = name
 }
 
-func (a *AlipayApi) init(app_id string) error {
-	if len(app_id) == 0 {
+func (a *AlipayApi) SetParams(m map[string]string) error {
+	if v, ok := m["app_id"]; ok {
+		a.params.AppId = v
+	}
+	if len(a.params.AppId) == 0 {
 		return ErrAppIdNil
 	}
 
-	if s, ok := secretLst[app_id]; !ok {
+	if _, ok := secretLst[a.params.AppId]; !ok {
 		return ErrSecretNil
-	} else {
-		a.params.AppId = s.AppId
 	}
+	//有些接口需要
+	if v, ok := m["auth_token"]; ok {
+		a.params.AuthToken = v
+	}
+
+	if v, ok := m["code"]; ok {
+		a.params.Code = v
+	}
+
+	if v, ok := m["grant_type"]; ok {
+		a.params.GrantType = v
+	}
+
 	return nil
 }
 
 func (a *AlipayApi) Run() error {
 	logs.DEBUG("=====================ALIPAY REQUEST START=====================")
-	logs.DEBUG(fmt.Sprintf("==[调用方法]==[%s]:[%s]", a.MethodName, a.Method))
+	logs.DEBUG(fmt.Sprintf("==[沙盒模式]==[%v]", conf.SandBoxEnable))
+	logs.DEBUG(fmt.Sprintf("==[调用方法]==[%s]:[%s]", a.MethodName, a.getApiMethod()))
 
 	if err := a.params.valid(); err != nil {
 		fmt.Println(err.Error())

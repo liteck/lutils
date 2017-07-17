@@ -131,6 +131,9 @@ func (a *AlipayApi) mTos(m map[string]interface{}) string {
 func (a *AlipayApi) sign(c string) (sign string, err error) {
 	//签名
 	s := getSecret(a.params.AppId)
+	logs.DEBUG(s)
+	logs.DEBUG(a.params.AppId)
+	logs.DEBUG(s.PrivRSA)
 	block, _ := pem.Decode(s.PrivRSA)
 	if block == nil {
 		return "", errors.New("privateKey error!")

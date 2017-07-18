@@ -19,7 +19,7 @@ https://docs.open.alipay.com/api
 	3.PublicAppAuthorize 授权跳转地址拼接
 	4.增加签名验证规则.
 	5.解析内容.转码 utf8并返回
-	6.
+	6.商户的授权链接接口
 
 2017-07-11 00.00.01
 	1.koubei.marketing.data.dishdiagnosetype.batchquery(菜品类型查询)

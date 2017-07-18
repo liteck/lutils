@@ -30,3 +30,18 @@ func PublicAppAuthorize(app_id, scope, redirect_uri, state string) string {
 	logs.DEBUG(uri)
 	return uri
 }
+
+func AppToAppAuth(app_id, redirect_uri string) string {
+	uri := ""
+
+	if conf.SandBoxEnable {
+		uri = "https://openauth.alipaydev.com/"
+	} else {
+		uri = "https://openauth.alipay.com/"
+	}
+	uri += "oauth2/appToAppAuth.htm"
+	uri += "?app_id=" + app_id
+	uri += "&redirect_uri=" + redirect_uri
+	logs.DEBUG(uri)
+	return uri
+}

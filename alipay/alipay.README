@@ -5,13 +5,21 @@ https://docs.open.alipay.com/api
 具体的沙盒模式情
 
 
+下一步:
+	商户的授权.
+	口碑的列表获取.
+	口碑的详情获取.
+	bizcontent 的处理.
+
+
 
 2017年07月18日 星期二
 	1.支付宝会员授权信息查询接口 alipay.user.info.share
 	2.换取授权访问令牌 alipay.system.oauth.token
 	3.PublicAppAuthorize 授权跳转地址拼接
 	4.增加签名验证规则.
-	5.
+	5.解析内容.转码 utf8并返回
+	6.
 
 2017-07-11 00.00.01
 	1.koubei.marketing.data.dishdiagnosetype.batchquery(菜品类型查询)

@@ -8,10 +8,14 @@
 
 package alipay
 
-func PublicAppAuthorize(app_id, scope, redirect_uri, state) string {
+import (
+	"lutils/logs"
+)
+
+func PublicAppAuthorize(app_id, scope, redirect_uri, state string) string {
 	uri := ""
 
-	if config.SandBoxEnable {
+	if conf.SandBoxEnable {
 		uri = "https://openauth.alipaydev.com/"
 	} else {
 		uri = "https://openauth.alipay.com/"
@@ -23,4 +27,6 @@ func PublicAppAuthorize(app_id, scope, redirect_uri, state) string {
 	if len(state) > 0 {
 		uri += "&state=" + state
 	}
+	logs.DEBUG(uri)
+	return uri
 }

@@ -4,12 +4,14 @@ import (
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha1"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"io"
 	"lutils/httplib"
 	"lutils/logs"
 	"lutils/mahonia"
@@ -59,7 +61,6 @@ func GetSupportApis() []string {
 type AlipayApi struct {
 	params     requestParams
 	BizContent string
-	Method     string
 	MethodName string
 }
 
@@ -151,7 +152,33 @@ func (a *AlipayApi) sign(c string) (sign string, err error) {
 	return result, nil
 }
 
-func (a *AlipayApi) verifySign(in string, origin_sign string) bool {
+func (a *AlipayApi) verifySign(s, origin_sign, method_key string) bool {
+	sign_start_index := strings.Index(s, ",\"sign\"")
+	if sign_start_index == -1 {
+		return false
+	}
+	tobe_signed := s[4+len(method_key) : sign_start_index]
+	block, _ := pem.Decode(getSecret(a.params.AppId).AliPubRSA)
+	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		fmt.Printf("Failed to parse RSA public key: %s\n", err)
+		return false
+	}
+	rsaPub, _ := pub.(*rsa.PublicKey)
+	t := sha1.New()
+	io.WriteString(t, tobe_signed)
+	digest := t.Sum(nil)
+	data, err := base64.StdEncoding.DecodeString(origin_sign)
+	if err != nil {
+		fmt.Println("DecodeString sig error, reason: ", err)
+		return false
+	}
+	err = rsa.VerifyPKCS1v15(rsaPub, crypto.SHA1, digest, data)
+	if err != nil {
+		fmt.Println("Verify sig error, reason: ", err)
+		return false
+	}
+
 	return true
 }
 
@@ -182,8 +209,8 @@ func (a *AlipayApi) request(m map[string]interface{}) (string, error) {
 }
 
 func (a *AlipayApi) apiMethod() string {
-	if len(a.Method) > 0 {
-		return a.Method
+	if len(a.params.Method) > 0 {
+		return a.params.Method
 	}
 	return ErrMethodNotSupport.Error()
 }
@@ -196,7 +223,7 @@ func (a *AlipayApi) apiName() string {
 }
 
 func (a *AlipayApi) setApiMethod(method string) {
-	a.Method = method
+	a.params.Method = method
 }
 
 func (a *AlipayApi) setApiName(name string) {
@@ -262,21 +289,38 @@ func (a *AlipayApi) Run() (string, error) {
 		result_string = v
 		logs.DEBUG(fmt.Sprintf("==[响应结果]==[GBK 编码]:[%s]", result_string))
 	}
+
+	//把 method 转换为 key
+	method_key := strings.Replace(a.params.Method, ".", "_", -1)
+	method_key += "_response"
+
+	result_string = strings.Replace(result_string, "error_response", method_key, -1)
 	//解析结果
 	resp_map := map[string]interface{}{}
 	if err := json.Unmarshal([]byte(result_string), &resp_map); err != nil {
 		return "", err
 	}
-	//看看有没有sign
-	if v, ok := resp_map["sign"].(string); ok {
-		//有则校验签名
-		if pass := a.verifySign(result_string, v); !pass {
+	//原始签名
+	if v, ok := resp_map["sign"].(string); ok && len(v) > 0 {
+		if pass := a.verifySign(result_string, v, method_key); !pass {
 			return "", ErrVerifySign
 		}
 	}
+
 	//转码
 	result_string = a.convertGBK2UTF(result_string)
 	logs.DEBUG(fmt.Sprintf("==[响应结果]==[UTF 编码]:[%s]", result_string))
+
+	if err := json.Unmarshal([]byte(result_string), &resp_map); err != nil {
+		return "", err
+	}
+	//把需要的内容再次换成string
+	if v, err := json.Marshal(resp_map[method_key]); err != nil {
+		return "", err
+	} else {
+		result_string = string(v)
+		logs.DEBUG(result_string)
+	}
 	//验证签名
 	logs.DEBUG("=====================ALIPAY REQUEST END=====================")
 	return result_string, nil

@@ -18,12 +18,81 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"time"
 )
+
+//公共请求参数
+type requestParams struct {
+	AppId        string `ali:"app_id"`
+	Method       string `ali:"method"`
+	Format       string `ali:"format"`
+	Charset      string `ali:"charset"`
+	SignType     string `ali:"sign_type"`
+	Sign         string `ali:"sign"`
+	TimeStamp    string `ali:"timestamp"`
+	Version      string `ali:"version"`
+	AppAuthToken string `ali:"app_auth_token"`
+	BizContent   string `ali:"biz_content"`
+	AuthToken    string `ali:"auth_token"`
+	Code         string `ali:"code"`
+	GrantType    string `ali:"grant_type"`
+}
+
+func (params *requestParams) valid() error {
+	if len(params.AppId) == 0 {
+		return ErrAppIdNil
+	}
+
+	// if len(params.Method) == 0 {
+	// 	return errors.New("method 不能为空")
+	// }
+
+	if len(params.Format) == 0 {
+		params.Format = "JSON"
+	}
+
+	if len(params.Format) > 0 && params.Format != "JSON" {
+		return errors.New("format 仅支持JSON")
+	}
+
+	if len(params.Charset) == 0 {
+		params.Charset = "GBK"
+	}
+
+	if len(params.Charset) > 0 && strings.ToUpper(params.Charset) != "GBK" {
+		return errors.New("charset 目前仅支持GBK")
+	}
+
+	if len(params.SignType) == 0 {
+		params.SignType = "RSA"
+	}
+
+	if len(params.SignType) > 0 && params.SignType != "RSA" {
+		return errors.New("sign_type 仅支持RSA")
+	}
+
+	if len(params.TimeStamp) == 0 {
+		params.TimeStamp = time.Now().Format("2006-01-02 15:04:05")
+	}
+
+	if len(params.TimeStamp) > 0 {
+		if _, err := time.Parse("2006-01-02 15:04:05", params.TimeStamp); err != nil {
+			return errors.New("timestamp 格式\"yyyy-MM-dd HH:mm:ss\"")
+		}
+	}
+
+	if len(params.Version) == 0 {
+		params.Version = "1.0"
+	} else if params.Version != "1.0" {
+		return errors.New("version 固定为：1.0")
+	}
+
+	return nil
+}
 
 //支付宝api接口的抽象方法
 type alipayApiInterface interface {
 	Run() (string, error)
-	packageBizContent() string
 	apiMethod() string
 	apiName() string
 }
@@ -60,7 +129,6 @@ func GetSupportApis() []string {
 
 type AlipayApi struct {
 	params     requestParams
-	BizContent string
 	MethodName string
 }
 
@@ -80,8 +148,7 @@ func (a *AlipayApi) convertGBK2UTF(gbk string) (utf string) {
 }
 
 func (a *AlipayApi) buildRequestParams() map[string]interface{} {
-	biz_content := a.packageBizContent()
-	a.params.BizContent = biz_content
+	a.params.BizContent = a.bizContent()
 	a.params.Method = a.apiMethod()
 
 	t := reflect.TypeOf(a.params)
@@ -222,16 +289,16 @@ func (a *AlipayApi) apiName() string {
 	return ErrMethodNameNil.Error()
 }
 
+func (a *AlipayApi) bizContent() string {
+	return a.params.BizContent
+}
+
 func (a *AlipayApi) setApiMethod(method string) {
 	a.params.Method = method
 }
 
 func (a *AlipayApi) setApiName(name string) {
 	a.MethodName = name
-}
-
-func (a *AlipayApi) packageBizContent() string {
-	return ""
 }
 
 func (a *AlipayApi) SetAppId(app_id string) error {
@@ -246,16 +313,29 @@ func (a *AlipayApi) SetAppId(app_id string) error {
 	return nil
 }
 
-func (a *AlipayApi) SetAuthToken(auth_token string) {
-	a.params.AuthToken = auth_token
-}
+func (a *AlipayApi) PackageBizContent(biz BizInterface) error {
+	if err := biz.valid(); err != nil {
+		return err
+	}
+	content := ""
+	if v, err := json.Marshal(&biz); err != nil {
+		return err
+	} else {
+		content = string(v)
+	}
 
-func (a *AlipayApi) SetAuthCode(code string) {
-	a.params.Code = code
-}
+	temp_map := map[string]interface{}{
+		"biz": content,
+	}
 
-func (a *AlipayApi) SetGrantType(grant_type string) {
-	a.params.GrantType = grant_type
+	if v, err := json.Marshal(&temp_map); err != nil {
+		return err
+	} else {
+		content = string(v)
+
+	}
+	a.params.BizContent = content[8 : len(content)-2]
+	return nil
 }
 
 func (a *AlipayApi) Run() (string, error) {

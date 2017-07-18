@@ -27,8 +27,8 @@ func (k *AlipayUserInfoShare) apiName() string {
 	return "支付宝会员授权信息查询接口"
 }
 
-func (a *AlipayUserInfoShare) packageBizContent() string {
-	return ""
+func (a *AlipayUserInfoShare) SetAuthToken(auth_token string) {
+	a.params.AuthToken = auth_token
 }
 
 func init() {

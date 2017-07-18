@@ -9,7 +9,7 @@ https://docs.open.alipay.com/api
 	商户的授权.
 	口碑的列表获取.
 	口碑的详情获取.
-	bizcontent 的处理.
+	
 
 
 
@@ -20,6 +20,9 @@ https://docs.open.alipay.com/api
 	4.增加签名验证规则.
 	5.解析内容.转码 utf8并返回
 	6.商户的授权链接接口
+	7.alipay.open.auth.token.app 
+	8.bizcontent 的处理.
+	9.返回数据结构的处理.
 
 2017-07-11 00.00.01
 	1.koubei.marketing.data.dishdiagnosetype.batchquery(菜品类型查询)

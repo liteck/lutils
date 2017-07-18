@@ -2,11 +2,15 @@ package alipay
 
 import "errors"
 
-/**
-全局的支付宝参数配置。
-全局请求参数。如果有参数则使用原有的。
-如果没有。。则使用全局配置的。
-**/
+var (
+	ErrMethodNotSupport  = errors.New("METHOD NOT SUPPORT")
+	ErrMethodNameNil     = errors.New("METHOD NAME NIL")
+	ErrBizContentNameNil = errors.New("BIZ CONTENT NIL")
+	ErrAppIdNil          = errors.New("APPID NIL")
+	ErrSecretNil         = errors.New("SECRET NIL")
+	ErrSign              = errors.New("SIGN ERROR")
+	ErrVerifySign        = errors.New("VERIFY SIGN ERROR")
+)
 
 type config struct {
 	SandBoxEnable bool

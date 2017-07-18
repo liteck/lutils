@@ -28,10 +28,6 @@ func (k *KoubeiMarketingDataDishdiagnosetypeBatchquery) apiName() string {
 	return "菜品类型查询"
 }
 
-func (k *KoubeiMarketingDataDishdiagnosetypeBatchquery) packageBizContent() string {
-	return ""
-}
-
 func init() {
 	registerApi(new(KoubeiMarketingDataDishdiagnosetypeBatchquery))
 }

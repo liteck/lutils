@@ -92,12 +92,9 @@ func (params *requestParams) valid() error {
 
 type bizInterface interface {
 	valid() error
-	toString() (string, error)
 }
 
-type responseInterface interface {
-	unmarshal(s string) error
-}
+type responseInterface interface{}
 
 type Response struct {
 	Code    string `json:"code,omitempty"`
@@ -107,10 +104,8 @@ type Response struct {
 }
 
 type ApiHander interface {
-	// ApiHandlerFunc()
 	apiMethod() string
 	apiName() string
-	unmarshal(string) interface{}
 }
 
 var (
@@ -125,7 +120,6 @@ func registerApi(handler ApiHander) {
 	apiRegistry[handler.apiMethod()] = AlipayApi{
 		apiname:   handler.apiName,
 		apimethod: handler.apiMethod,
-		unmarshal: handler.unmarshal,
 	}
 }
 
@@ -145,7 +139,6 @@ type AlipayApi struct {
 	params    requestParams
 	apiname   func() string
 	apimethod func() string
-	unmarshal func(string) interface{}
 }
 
 func (a *AlipayApi) SetAppId(app_id string) error {
@@ -161,7 +154,21 @@ func (a *AlipayApi) SetAppId(app_id string) error {
 }
 
 func (a *AlipayApi) SetBizContent(biz bizInterface) error {
-	if v, err := biz.toString(); err != nil {
+	//有几个接口要独立处理
+	if reflect.TypeOf(biz).Name() == reflect.TypeOf(Biz_alipay_system_oauth_token{}).Name() {
+		b := biz.(Biz_alipay_system_oauth_token)
+		a.params.Code = b.Code
+		a.params.GrantType = b.GrantType
+		a.params.BizContent = ""
+		return nil
+	} else if reflect.TypeOf(biz).Name() == reflect.TypeOf(Biz_alipay_user_info_share{}).Name() {
+		b := biz.(Biz_alipay_user_info_share)
+		a.params.AuthToken = b.AuthToken
+		a.params.BizContent = ""
+		return nil
+	}
+
+	if v, err := a.biz_to_string(biz); err != nil {
 		return err
 	} else {
 		a.params.BizContent = v
@@ -223,6 +230,29 @@ func (a *AlipayApi) map_to_string(m map[string]interface{}) string {
 		signStrings = signStrings[:len(signStrings)-1]
 	}
 	return signStrings
+}
+
+func (a *AlipayApi) biz_to_string(b bizInterface) (string, error) {
+	if err := b.valid(); err != nil {
+		return "", err
+	}
+	content := ""
+	if v, err := json.Marshal(&b); err != nil {
+		return "", err
+	} else {
+		content = string(v)
+	}
+
+	temp_map := map[string]interface{}{
+		"biz": content,
+	}
+
+	if v, err := json.Marshal(&temp_map); err != nil {
+		return "", err
+	} else {
+		content = string(v)
+	}
+	return content[8 : len(content)-2], nil
 }
 
 func (a *AlipayApi) sign(c string) (sign string, err error) {
@@ -381,7 +411,7 @@ func (a *AlipayApi) Run(resp responseInterface) error {
 		result_string = string(v)
 	}
 
-	if err := resp.unmarshal(result_string); err != nil {
+	if err := json.Unmarshal([]byte(result_string), resp); err != nil {
 		return err
 	}
 	return nil

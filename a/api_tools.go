@@ -53,12 +53,12 @@ func (b Biz_alipay_system_oauth_token) valid() error {
 
 type Resp_alipay_system_oauth_token struct {
 	Response
-	AlipayUserId string `json:"alipay_user_id,omitempty"`
-	UserId       string `json:"user_id,omitempty"`
-	AccessToken  string `json:"access_token,omitempty"`
-	RefreshToken string `json:"refresh_token,omitempty"`
-	ExpiresIn    string `json:"expires_in,omitempty"`
-	ReExpiresIn  string `json:"re_expires_in,omitempty"`
+	AlipayUserId string  `json:"alipay_user_id,omitempty"`
+	UserId       string  `json:"user_id,omitempty"`
+	AccessToken  string  `json:"access_token,omitempty"`
+	RefreshToken string  `json:"refresh_token,omitempty"`
+	ExpiresIn    float64 `json:"expires_in,omitempty"`
+	ReExpiresIn  float64 `json:"re_expires_in,omitempty"`
 }
 
 //=========================
@@ -106,12 +106,12 @@ func (b Biz_alipay_open_auth_token_app) valid() error {
 
 type Resp_alipay_open_auth_token_app struct {
 	Response
-	UserId          string `json:"user_id,omitempty"`
-	AuthAppId       string `json:"auth_app_id,omitempty"`
-	AppAuthToken    string `json:"app_auth_token,omitempty"`
-	AppRefreshToken string `json:"app_refresh_token,omitempty"`
-	ExpiresIn       string `json:"expires_in,omitempty"`
-	ReExpiresIn     string `json:"re_expires_in,omitempty"`
+	UserId          string  `json:"user_id,omitempty"`
+	AuthAppId       string  `json:"auth_app_id,omitempty"`
+	AppAuthToken    string  `json:"app_auth_token,omitempty"`
+	AppRefreshToken string  `json:"app_refresh_token,omitempty"`
+	ExpiresIn       float64 `json:"expires_in,omitempty"`
+	ReExpiresIn     float64 `json:"re_expires_in,omitempty"`
 }
 
 func init() {

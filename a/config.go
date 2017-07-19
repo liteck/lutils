@@ -60,7 +60,7 @@ func (s *Secret) valid() error {
 
 var secretLst map[string]Secret
 
-func RegisterAlipaySecret(s ...Secret) error {
+func RegisterSecret(s ...Secret) error {
 	if len(s) == 0 {
 		return errors.New("配置参数不能为空!")
 	}

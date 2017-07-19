@@ -90,66 +90,69 @@ func (params *requestParams) valid() error {
 	return nil
 }
 
-//支付宝api接口的抽象方法
-type alipayApiInterface interface {
-	Run() (string, error)
+type ApiHander interface {
+	// ApiHandlerFunc()
 	apiMethod() string
 	apiName() string
 }
 
-type apis map[string]alipayApiInterface
-
-func (a apis) put(k string, v alipayApiInterface) {
-	a[k] = v
-}
-
-func (a apis) get(k string) (alipayApiInterface, bool) {
-	v, ok := a[k]
-	return v, ok
-}
-
-var apiLst apis
+var (
+	apiRegistry map[string]AlipayApi
+)
 
 func init() {
-	apiLst = apis{}
+	apiRegistry = map[string]AlipayApi{}
 }
 
-func registerApi(v alipayApiInterface) {
-	apiLst.put(v.apiMethod(), v)
-}
-
-func GetSupportApis() []string {
-	ret := []string{}
-	for _, v := range apiLst {
-		r := "\n" + v.apiName() + ":" + v.apiMethod()
-		ret = append(ret, r)
+func registerApi(handler ApiHander) {
+	apiRegistry[handler.apiMethod()] = AlipayApi{
+		apiname:   handler.apiName,
+		apimethod: handler.apiMethod,
 	}
-	return ret
+}
+
+func GetApi(method string) AlipayApi {
+	return apiRegistry[method]
+}
+
+func GetSupportApis() string {
+	lst := "\n=====================SUPPORTED ALIPAY API LIST=====================\n"
+	for _, v := range apiRegistry {
+		lst += "====[" + v.apiname() + ":" + v.apimethod() + "]====" + "\n"
+	}
+	return lst
 }
 
 type AlipayApi struct {
-	params     requestParams
-	MethodName string
+	params    requestParams
+	apiname   func() string
+	apimethod func() string
 }
 
-/**
- * 支付宝的数据返回应该是GBK的,,在golang中显示乱码.需要转换
- * @param  {[type]} utf string)       (gbk string [description]
- * @return {[type]}     [description]
- */
-func (a *AlipayApi) convertUTF2GBK(utf string) (gbk string) {
-	gbk_enc := mahonia.NewEncoder("GBK")
-	return gbk_enc.ConvertString(utf)
+func (a *AlipayApi) SetAppId(app_id string) error {
+	a.params.AppId = app_id
+	if len(a.params.AppId) == 0 {
+		return ErrAppIdNil
+	}
+
+	if _, ok := secretLst[a.params.AppId]; !ok {
+		return ErrSecretNil
+	}
+	return nil
 }
 
-func (a *AlipayApi) convertGBK2UTF(gbk string) (utf string) {
-	enc := mahonia.NewDecoder("GBK")
-	return enc.ConvertString(gbk)
+func (a *AlipayApi) SetBizContent(biz BizInterface) error {
+	if v, err := biz.toString(); err != nil {
+		return err
+	} else {
+		a.params.BizContent = v
+		return nil
+	}
 }
 
-func (a *AlipayApi) buildRequestParams() map[string]interface{} {
-	a.params.BizContent = a.bizContent()
-	a.params.Method = a.apiMethod()
+//初始化请求数据
+func (a *AlipayApi) initparams() map[string]interface{} {
+	a.params.Method = a.apimethod()
 
 	t := reflect.TypeOf(a.params)
 	v := reflect.ValueOf(a.params)
@@ -170,6 +173,16 @@ func (a *AlipayApi) buildRequestParams() map[string]interface{} {
 		data[key] = value
 	}
 	return data
+}
+
+func (a *AlipayApi) convertUTF2GBK(utf string) (gbk string) {
+	gbk_enc := mahonia.NewEncoder("GBK")
+	return gbk_enc.ConvertString(utf)
+}
+
+func (a *AlipayApi) convertGBK2UTF(gbk string) (utf string) {
+	enc := mahonia.NewDecoder("GBK")
+	return enc.ConvertString(gbk)
 }
 
 func (a *AlipayApi) mTos(m map[string]interface{}) string {
@@ -275,79 +288,16 @@ func (a *AlipayApi) request(m map[string]interface{}) (string, error) {
 	return string_result, nil
 }
 
-func (a *AlipayApi) apiMethod() string {
-	if len(a.params.Method) > 0 {
-		return a.params.Method
-	}
-	return ErrMethodNotSupport.Error()
-}
-
-func (a *AlipayApi) apiName() string {
-	if len(a.MethodName) > 0 {
-		return a.MethodName
-	}
-	return ErrMethodNameNil.Error()
-}
-
-func (a *AlipayApi) bizContent() string {
-	return a.params.BizContent
-}
-
-func (a *AlipayApi) setApiMethod(method string) {
-	a.params.Method = method
-}
-
-func (a *AlipayApi) setApiName(name string) {
-	a.MethodName = name
-}
-
-func (a *AlipayApi) SetAppId(app_id string) error {
-	a.params.AppId = app_id
-	if len(a.params.AppId) == 0 {
-		return ErrAppIdNil
-	}
-
-	if _, ok := secretLst[a.params.AppId]; !ok {
-		return ErrSecretNil
-	}
-	return nil
-}
-
-func (a *AlipayApi) PackageBizContent(biz BizInterface) error {
-	if err := biz.valid(); err != nil {
-		return err
-	}
-	content := ""
-	if v, err := json.Marshal(&biz); err != nil {
-		return err
-	} else {
-		content = string(v)
-	}
-
-	temp_map := map[string]interface{}{
-		"biz": content,
-	}
-
-	if v, err := json.Marshal(&temp_map); err != nil {
-		return err
-	} else {
-		content = string(v)
-
-	}
-	a.params.BizContent = content[8 : len(content)-2]
-	return nil
-}
-
 func (a *AlipayApi) Run() (string, error) {
 	logs.DEBUG("=====================ALIPAY REQUEST START=====================")
 	logs.DEBUG(fmt.Sprintf("==[沙盒模式]==[%v]", conf.SandBoxEnable))
-	logs.DEBUG(fmt.Sprintf("==[调用方法]==[%s]:[%s]", a.apiName(), a.apiMethod()))
+	logs.DEBUG(fmt.Sprintf("==[调用方法]==[%s]:[%s]", a.apiname(), a.apimethod()))
 
 	if err := a.params.valid(); err != nil {
 		fmt.Println(err.Error())
 		return "", err
 	}
-	m := a.buildRequestParams()
+	m := a.initparams()
 	//做请求参数的签名
 	__sign := ""
 	tobe_sign := a.mTos(m)

@@ -10,6 +10,7 @@
 package alipay
 
 import "errors"
+import "encoding/json"
 
 const (
 	CAN_NOT_NIL  = "不能为空"
@@ -18,6 +19,7 @@ const (
 
 type BizInterface interface {
 	valid() error
+	toString() (string, error)
 }
 
 type BizAlipayOpenAuthTokenApp struct {
@@ -43,4 +45,27 @@ func (b BizAlipayOpenAuthTokenApp) valid() error {
 		return errors.New("refresh_token" + CAN_NOT_NIL)
 	}
 	return nil
+}
+
+func (b BizAlipayOpenAuthTokenApp) toString() (string, error) {
+	if err := b.valid(); err != nil {
+		return "", err
+	}
+	content := ""
+	if v, err := json.Marshal(&b); err != nil {
+		return "", err
+	} else {
+		content = string(v)
+	}
+
+	temp_map := map[string]interface{}{
+		"biz": content,
+	}
+
+	if v, err := json.Marshal(&temp_map); err != nil {
+		return "", err
+	} else {
+		content = string(v)
+	}
+	return content[8 : len(content)-2], nil
 }

@@ -14,20 +14,20 @@ type KoubeiMarketingDataDishdiagnosetypeBatchquery struct {
 	AlipayApi
 }
 
-func (k *KoubeiMarketingDataDishdiagnosetypeBatchquery) SetAppId(app_id string) error {
-	k.setApiMethod(k.apiMethod())
-	k.setApiName(k.apiName())
-	return k.AlipayApi.SetAppId(app_id)
-}
+// func (k *KoubeiMarketingDataDishdiagnosetypeBatchquery) SetAppId(app_id string) error {
+// 	k.setApiMethod(k.apiMethod())
+// 	k.setApiName(k.apiName())
+// 	return k.AlipayApi.SetAppId(app_id)
+// }
 
-func (k *KoubeiMarketingDataDishdiagnosetypeBatchquery) apiMethod() string {
-	return "koubei.marketing.data.dishdiagnosetype.batchquery"
-}
+// func (k *KoubeiMarketingDataDishdiagnosetypeBatchquery) apiMethod() string {
+// 	return "koubei.marketing.data.dishdiagnosetype.batchquery"
+// }
 
-func (k *KoubeiMarketingDataDishdiagnosetypeBatchquery) apiName() string {
-	return "菜品类型查询"
-}
+// func (k *KoubeiMarketingDataDishdiagnosetypeBatchquery) apiName() string {
+// 	return "菜品类型查询"
+// }
 
-func init() {
-	registerApi(new(KoubeiMarketingDataDishdiagnosetypeBatchquery))
-}
+// func init() {
+// 	registerApi(new(KoubeiMarketingDataDishdiagnosetypeBatchquery))
+// }

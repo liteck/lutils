@@ -1,4 +1,4 @@
-package alipay
+package a
 
 import (
 	"crypto"
@@ -43,9 +43,9 @@ func (params *requestParams) valid() error {
 		return ErrAppIdNil
 	}
 
-	// if len(params.Method) == 0 {
-	// 	return errors.New("method 不能为空")
-	// }
+	if len(params.Method) == 0 {
+		return errors.New("method 不能为空")
+	}
 
 	if len(params.Format) == 0 {
 		params.Format = "JSON"
@@ -90,10 +90,27 @@ func (params *requestParams) valid() error {
 	return nil
 }
 
+type bizInterface interface {
+	valid() error
+	toString() (string, error)
+}
+
+type responseInterface interface {
+	unmarshal(s string) error
+}
+
+type Response struct {
+	Code    string `json:"code,omitempty"`
+	Msg     string `json:"msg,omitempty"`
+	SubCode string `json:"sub_code,omitempty"`
+	SubMsg  string `json:"sub_msg,omitempty"`
+}
+
 type ApiHander interface {
 	// ApiHandlerFunc()
 	apiMethod() string
 	apiName() string
+	unmarshal(string) interface{}
 }
 
 var (
@@ -108,6 +125,7 @@ func registerApi(handler ApiHander) {
 	apiRegistry[handler.apiMethod()] = AlipayApi{
 		apiname:   handler.apiName,
 		apimethod: handler.apiMethod,
+		unmarshal: handler.unmarshal,
 	}
 }
 
@@ -127,6 +145,7 @@ type AlipayApi struct {
 	params    requestParams
 	apiname   func() string
 	apimethod func() string
+	unmarshal func(string) interface{}
 }
 
 func (a *AlipayApi) SetAppId(app_id string) error {
@@ -141,7 +160,7 @@ func (a *AlipayApi) SetAppId(app_id string) error {
 	return nil
 }
 
-func (a *AlipayApi) SetBizContent(biz BizInterface) error {
+func (a *AlipayApi) SetBizContent(biz bizInterface) error {
 	if v, err := biz.toString(); err != nil {
 		return err
 	} else {
@@ -150,10 +169,7 @@ func (a *AlipayApi) SetBizContent(biz BizInterface) error {
 	}
 }
 
-//初始化请求数据
-func (a *AlipayApi) initparams() map[string]interface{} {
-	a.params.Method = a.apimethod()
-
+func (a *AlipayApi) struct_to_map() map[string]interface{} {
 	t := reflect.TypeOf(a.params)
 	v := reflect.ValueOf(a.params)
 
@@ -175,17 +191,17 @@ func (a *AlipayApi) initparams() map[string]interface{} {
 	return data
 }
 
-func (a *AlipayApi) convertUTF2GBK(utf string) (gbk string) {
+func (a *AlipayApi) utf_to_gbk(utf string) (gbk string) {
 	gbk_enc := mahonia.NewEncoder("GBK")
 	return gbk_enc.ConvertString(utf)
 }
 
-func (a *AlipayApi) convertGBK2UTF(gbk string) (utf string) {
+func (a *AlipayApi) gbk_to_utf(gbk string) (utf string) {
 	enc := mahonia.NewDecoder("GBK")
 	return enc.ConvertString(gbk)
 }
 
-func (a *AlipayApi) mTos(m map[string]interface{}) string {
+func (a *AlipayApi) map_to_string(m map[string]interface{}) string {
 	//对key进行升序排序.
 	sorted_keys := make([]string, 0)
 	for k, _ := range m {
@@ -288,24 +304,38 @@ func (a *AlipayApi) request(m map[string]interface{}) (string, error) {
 	return string_result, nil
 }
 
-func (a *AlipayApi) Run() (string, error) {
+func (a *AlipayApi) Run(resp responseInterface) error {
+	defer logs.DEBUG("=====================ALIPAY REQUEST END=====================")
 	logs.DEBUG("=====================ALIPAY REQUEST START=====================")
 	logs.DEBUG(fmt.Sprintf("==[沙盒模式]==[%v]", conf.SandBoxEnable))
 	logs.DEBUG(fmt.Sprintf("==[调用方法]==[%s]:[%s]", a.apiname(), a.apimethod()))
-
+	a.params.Method = a.apimethod()
 	if err := a.params.valid(); err != nil {
 		fmt.Println(err.Error())
-		return "", err
+		return err
 	}
-	m := a.initparams()
+
+	rv := reflect.ValueOf(resp)
+	if rv.Kind() != reflect.Ptr || rv.IsNil() {
+		if rv.Type() == nil {
+			return errors.New("responseInterface is nil")
+		}
+
+		if rv.Type().Kind() != reflect.Ptr {
+			return errors.New("responseInterface is non-pointer" + rv.Type().String())
+		}
+		return errors.New("responseInterface is nil" + rv.Type().String())
+	}
+
+	m := a.struct_to_map()
 	//做请求参数的签名
 	__sign := ""
-	tobe_sign := a.mTos(m)
+	tobe_sign := a.map_to_string(m)
 	logs.DEBUG(fmt.Sprintf("==[准备签名]==[%s]", tobe_sign))
 	if v, err := a.sign(tobe_sign); err != nil {
-		return "", err
+		return err
 	} else if len(v) == 0 {
-		return "", ErrSign
+		return ErrSign
 	} else {
 		__sign = v
 	}
@@ -314,7 +344,7 @@ func (a *AlipayApi) Run() (string, error) {
 	//准备请求
 	result_string := ""
 	if v, err := a.request(m); err != nil {
-		return "", err
+		return err
 	} else {
 		result_string = v
 		logs.DEBUG(fmt.Sprintf("==[响应结果]==[GBK 编码]:[%s]", result_string))
@@ -328,30 +358,31 @@ func (a *AlipayApi) Run() (string, error) {
 	//解析结果
 	resp_map := map[string]interface{}{}
 	if err := json.Unmarshal([]byte(result_string), &resp_map); err != nil {
-		return "", err
+		return err
 	}
 	//原始签名
 	if v, ok := resp_map["sign"].(string); ok && len(v) > 0 {
 		if pass := a.verifySign(result_string, v, method_key); !pass {
-			return "", ErrVerifySign
+			return ErrVerifySign
 		}
 	}
 
 	//转码
-	result_string = a.convertGBK2UTF(result_string)
+	result_string = a.gbk_to_utf(result_string)
 	logs.DEBUG(fmt.Sprintf("==[响应结果]==[UTF 编码]:[%s]", result_string))
 
 	if err := json.Unmarshal([]byte(result_string), &resp_map); err != nil {
-		return "", err
+		return err
 	}
 	//把需要的内容再次换成string
 	if v, err := json.Marshal(resp_map[method_key]); err != nil {
-		return "", err
+		return err
 	} else {
 		result_string = string(v)
-		logs.DEBUG(result_string)
 	}
-	//验证签名
-	logs.DEBUG("=====================ALIPAY REQUEST END=====================")
-	return result_string, nil
+
+	if err := resp.unmarshal(result_string); err != nil {
+		return err
+	}
+	return nil
 }

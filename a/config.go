@@ -1,4 +1,4 @@
-package alipay
+package a
 
 import "errors"
 
@@ -10,6 +10,11 @@ var (
 	ErrSecretNil         = errors.New("SECRET NIL")
 	ErrSign              = errors.New("SIGN ERROR")
 	ErrVerifySign        = errors.New("VERIFY SIGN ERROR")
+)
+
+const (
+	CAN_NOT_NIL  = "不能为空"
+	FORAMT_ERROR = "格式错误"
 )
 
 type config struct {

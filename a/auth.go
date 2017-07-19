@@ -6,7 +6,7 @@
 ** ===============================================
  */
 
-package alipay
+package a
 
 import (
 	"lutils/logs"

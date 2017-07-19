@@ -2,7 +2,7 @@
 营销api
 
 **/
-package alipay
+package a
 
 /**
 菜品类型查询

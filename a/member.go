@@ -2,7 +2,7 @@
  会员api
 
 **/
-package alipay
+package a
 
 /**
 支付宝会员授权信息查询接口

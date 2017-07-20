@@ -171,6 +171,12 @@ func (a *AlipayApi) SetBizContent(biz bizInterface) error {
 		a.params.AuthToken = b.AuthToken
 		a.params.BizContent = ""
 		return nil
+	} else if reflect.TypeOf(biz).Name() == reflect.TypeOf(Biz_alipay_open_auth_token_app{}).Name() {
+		b := biz.(Biz_alipay_open_auth_token_app)
+		a.params.Code = b.Code
+		a.params.GrantType = b.GrantType
+		a.params.BizContent = ""
+		return nil
 	}
 
 	if v, err := a.biz_to_string(biz); err != nil {

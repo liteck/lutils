@@ -248,16 +248,17 @@ func (a *AlipayApi) biz_to_string(b bizInterface) (string, error) {
 		content = string(v)
 	}
 
-	temp_map := map[string]interface{}{
-		"biz": content,
-	}
+	// temp_map := map[string]interface{}{
+	// 	"biz": content,
+	// }
 
-	if v, err := json.Marshal(&temp_map); err != nil {
-		return "", err
-	} else {
-		content = string(v)
-	}
-	return content[8 : len(content)-2], nil
+	// if v, err := json.Marshal(&temp_map); err != nil {
+	// 	return "", err
+	// } else {
+	// 	content = string(v)
+	// }
+	// return content[8 : len(content)-2], nil
+	return content, nil
 }
 
 func (a *AlipayApi) sign(c string) (sign string, err error) {
@@ -318,13 +319,13 @@ func (a *AlipayApi) request(m map[string]interface{}) (string, error) {
 	if conf.SandBoxEnable {
 		url_link = "https://openapi.alipaydev.com/gateway.do"
 	}
+	logs.DEBUG(fmt.Sprintf("==[请求参数]==[%s]", url_link))
 	http_request := httplib.Post(url_link)
 	tmp_string := ""
 	for k, _ := range m {
 		value := fmt.Sprintf("%v", m[k])
 		if value != "" {
 			http_request.Param(k, value)
-			logs.DEBUG(fmt.Sprintf("==[请求参数]==[%s]:[%s]", k, value))
 			tmp_string = tmp_string + k + "=" + value + "\t"
 		}
 	}

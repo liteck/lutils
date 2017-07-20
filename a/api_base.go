@@ -171,12 +171,6 @@ func (a *AlipayApi) SetBizContent(biz bizInterface) error {
 		a.params.AuthToken = b.AuthToken
 		a.params.BizContent = ""
 		return nil
-	} else if reflect.TypeOf(biz).Name() == reflect.TypeOf(Biz_alipay_open_auth_token_app{}).Name() {
-		b := biz.(Biz_alipay_open_auth_token_app)
-		a.params.Code = b.Code
-		a.params.GrantType = b.GrantType
-		a.params.BizContent = ""
-		return nil
 	}
 
 	if v, err := a.biz_to_string(biz); err != nil {
@@ -330,10 +324,10 @@ func (a *AlipayApi) request(m map[string]interface{}) (string, error) {
 		value := fmt.Sprintf("%v", m[k])
 		if value != "" {
 			http_request.Param(k, value)
+			logs.DEBUG(fmt.Sprintf("==[请求参数]==[%s]:[%s]", k, v))
 			tmp_string = tmp_string + k + "=" + value + "\t"
 		}
 	}
-
 	logs.DEBUG(fmt.Sprintf("==[请求参数]==[%s]", tmp_string))
 	var string_result string
 	if v, err := http_request.String(); err != nil {

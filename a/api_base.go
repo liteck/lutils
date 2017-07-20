@@ -324,7 +324,7 @@ func (a *AlipayApi) request(m map[string]interface{}) (string, error) {
 		value := fmt.Sprintf("%v", m[k])
 		if value != "" {
 			http_request.Param(k, value)
-			logs.DEBUG(fmt.Sprintf("==[请求参数]==[%s]:[%s]", k, v))
+			logs.DEBUG(fmt.Sprintf("==[请求参数]==[%s]:[%s]", k, value))
 			tmp_string = tmp_string + k + "=" + value + "\t"
 		}
 	}

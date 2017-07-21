@@ -22,14 +22,12 @@ https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=4_4
 **/
 
 //开放平台的网页授权模式.获取授权链接
-func OpenWebAuth(app_id, scope, redirect_uri, state string) string {
+func OpenWebAuth(app_id, scope, redirect_uri string) string {
 	uri := "https://open.weixin.qq.com/connect/oauth2/authorize"
 	uri += "?appid=" + app_id
 	uri += "&scope=" + scope
 	uri += "&redirect_uri=" + redirect_uri
-	if len(state) > 0 {
-		uri += "&state=" + state
-	}
+	uri += "&state=" + app_id
 	uri += "&response_type=code#wechat_redirect"
 	logs.DEBUG(uri)
 	return uri

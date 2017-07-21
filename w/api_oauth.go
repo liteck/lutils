@@ -25,10 +25,11 @@ https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=4_4
 func OpenWebAuth(app_id, scope, redirect_uri string) string {
 	uri := "https://open.weixin.qq.com/connect/oauth2/authorize"
 	uri += "?appid=" + app_id
-	uri += "&scope=" + scope
 	uri += "&redirect_uri=" + redirect_uri
+	uri += "&response_type=code"
+	uri += "&scope=" + scope
 	uri += "&state=" + app_id
-	uri += "&response_type=code#wechat_redirect"
+	uri += "#wechat_redirect"
 	logs.DEBUG(uri)
 	return uri
 }
@@ -73,8 +74,67 @@ type Resp_api_wechat_sns_oauth2_access_token struct {
 	RefreshToken string  `json:"refresh_token,omitempty"`
 	OpenId       string  `json:"openid,omitempty"`
 	Scope        string  `json:"scope,omitempty"`
+	UnoinId      string  `json:"unionid,omitempty"`
+}
+
+/**
+通过授权回调之后的 access_token 换取 userinfo
+接口说明
+此接口用于获取用户个人信息。开发者可通过OpenID来获取用户基本信息。
+特别需要注意的是，如果开发者拥有多个移动应用、网站应用和公众帐号，
+可通过获取用户基本信息中的unionid来区分用户的唯一性，
+因为只要是同一个微信开放平台帐号下的移动应用、网站应用和公众帐号，用户的unionid是唯一的。
+换句话说，同一用户，对同一个微信开放平台下的不同应用，unionid是相同的。
+请注意，在用户修改微信头像后，旧的微信头像URL将会失效，
+因此开发者应该自己在获取用户信息后，将头像图片保存下来，避免微信头像URL失效后的异常情况。
+**/
+type api_wechat_sns_userinfo struct {
+	WechatApi
+}
+
+func (o *api_wechat_sns_userinfo) apiUrl() string {
+	return "https://api.weixin.qq.com/sns/userinfo"
+}
+
+func (o *api_wechat_sns_userinfo) apiName() string {
+	return "获取用户个人信息（UnionID机制）"
+}
+
+func (o *api_wechat_sns_userinfo) apiMethod() string {
+	return "GET"
+}
+
+type Req_api_wechat_sns_userinfo struct {
+	AccessToken string `json:"access_token"`
+	OpenId      string `json:"openid"`
+	Lang        string `json:"lang"`
+}
+
+func (p Req_api_wechat_sns_userinfo) valid() error {
+	if len(p.AccessToken) == 0 {
+		return errors.New("access_token" + CAN_NOT_NIL)
+	}
+	if len(p.OpenId) == 0 {
+		return errors.New("openid" + CAN_NOT_NIL)
+	}
+
+	return nil
+}
+
+type Resp_api_wechat_sns_userinfo struct {
+	Response
+	OpenId     string `json:"openid,omitempty"`
+	NickName   string `json:"nickname,omitempty"`
+	Sex        string `json:"sex,omitempty"`
+	Province   string `json:"province,omitempty"`
+	City       string `json:"city,omitempty"`
+	Country    string `json:"country,omitempty"`
+	HeadimgUrl string `json:"headimgurl,omitempty"`
+	Privilege  string `json:"privilege,omitempty"`
+	UnoinId    string `json:"unionid,omitempty"`
 }
 
 func init() {
 	registerApi(new(api_wechat_sns_oauth2_access_token))
+	registerApi(new(api_wechat_sns_userinfo))
 }

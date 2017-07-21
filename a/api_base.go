@@ -347,7 +347,6 @@ func (a *AlipayApi) Run(resp responseInterface) error {
 	logs.DEBUG(fmt.Sprintf("==[调用方法]==[%s]:[%s]", a.apiname(), a.apimethod()))
 	a.params.Method = a.apimethod()
 	if err := a.params.valid(); err != nil {
-		fmt.Println(err.Error())
 		return err
 	}
 

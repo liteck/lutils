@@ -8,10 +8,6 @@
 
 package a
 
-import (
-	"lutils/logs"
-)
-
 func PublicAppAuthorize(app_id, scope, redirect_uri, state string) string {
 	uri := ""
 
@@ -27,7 +23,6 @@ func PublicAppAuthorize(app_id, scope, redirect_uri, state string) string {
 	if len(state) > 0 {
 		uri += "&state=" + state
 	}
-	logs.DEBUG(uri)
 	return uri
 }
 
@@ -42,6 +37,5 @@ func AppToAppAuth(app_id, redirect_uri string) string {
 	uri += "oauth2/appToAppAuth.htm"
 	uri += "?app_id=" + app_id
 	uri += "&redirect_uri=" + redirect_uri
-	logs.DEBUG(uri)
 	return uri
 }

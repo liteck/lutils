@@ -47,7 +47,6 @@ var (
 )
 
 func init() {
-	logs.ERROR("1")
 	apiRegistry = map[string]WechatApi{}
 }
 

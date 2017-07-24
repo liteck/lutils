@@ -53,6 +53,10 @@ func RegisterSecret(s ...Secret) error {
 	return nil
 }
 
+func DeleteSecret(app_id string) {
+	delete(secretLst, app_id)
+}
+
 func getSecret(appid string) Secret {
 	return secretLst[appid]
 }

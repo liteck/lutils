@@ -390,6 +390,7 @@ func (a *AlipayApi) Run(resp responseInterface) error {
 	method_key += "_response"
 
 	result_string = strings.Replace(result_string, "error_response", method_key, -1)
+	result_string = strings.Replace(result_string, "\\", "", -1)
 	//解析结果
 	resp_map := map[string]interface{}{}
 	if err := json.Unmarshal([]byte(result_string), &resp_map); err != nil {

@@ -287,7 +287,7 @@ func (a *AlipayApi) sign(c string) (sign string, err error) {
 func (a *AlipayApi) verifySign(s, origin_sign, method_key string) bool {
 	if a.params.Method == "alipay.user.userinfo.share" {
 		//这里是要转义后校验的.NND
-		result_string = strings.Replace(result_string, "\\", "", -1)
+		s = strings.Replace(s, "\\", "", -1)
 	}
 	sign_start_index := strings.Index(s, ",\"sign\"")
 	if sign_start_index == -1 {

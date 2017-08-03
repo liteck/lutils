@@ -285,6 +285,10 @@ func (a *AlipayApi) sign(c string) (sign string, err error) {
 }
 
 func (a *AlipayApi) verifySign(s, origin_sign, method_key string) bool {
+	if a.params.Method == "alipay.user.userinfo.share" {
+		//这里是要转义后校验的.NND
+		result_string = strings.Replace(result_string, "\\", "", -1)
+	}
 	sign_start_index := strings.Index(s, ",\"sign\"")
 	if sign_start_index == -1 {
 		return false
@@ -390,7 +394,7 @@ func (a *AlipayApi) Run(resp responseInterface) error {
 	method_key += "_response"
 
 	result_string = strings.Replace(result_string, "error_response", method_key, -1)
-	result_string = strings.Replace(result_string, "\\", "", -1)
+
 	//解析结果
 	resp_map := map[string]interface{}{}
 	if err := json.Unmarshal([]byte(result_string), &resp_map); err != nil {
@@ -406,7 +410,8 @@ func (a *AlipayApi) Run(resp responseInterface) error {
 	//转码
 	result_string = a.gbk_to_utf(result_string)
 	logs.DEBUG(fmt.Sprintf("==[响应结果]==[UTF 编码]:[%s]", result_string))
-
+	result_string = strings.Replace(result_string, "\\", "", -1)
+	logs.DEBUG(fmt.Sprintf("==[响应结果]==[去掉转义]:[%s]", result_string))
 	if err := json.Unmarshal([]byte(result_string), &resp_map); err != nil {
 		return err
 	}

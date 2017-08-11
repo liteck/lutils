@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"errors"
 	"os/signal"
 
 	"github.com/Shopify/sarama"
@@ -15,7 +16,16 @@ import (
 var consumer *cluster.Consumer
 var sig chan os.Signal
 
-func PrepareConsumer() {
+type ConsumerConfig struct {
+	Topics     []string
+	Servers    []string
+	Ak         string
+	Password   string
+	ConsumerId string
+	CertBytes  []byte
+}
+
+func PrepareConsumer(cfg *ConsumerConfig) error {
 	fmt.Println("init kafka consumer")
 
 	var err error
@@ -30,7 +40,7 @@ func PrepareConsumer() {
 	clientCertPool := x509.NewCertPool()
 	ok := clientCertPool.AppendCertsFromPEM(cfg.CertBytes)
 	if !ok {
-		panic("kafka consumer failed to parse root certificate")
+		return errors.New("kafka consumer failed to parse root certificate")
 	}
 
 	clusterCfg.Net.TLS.Config = &tls.Config{
@@ -47,23 +57,18 @@ func PrepareConsumer() {
 	clusterCfg.Version = sarama.V0_10_0_0
 	if err = clusterCfg.Validate(); err != nil {
 		msg := fmt.Sprintf("Kafka consumer config invalidate. config: %v. err: %v", *clusterCfg, err)
-		fmt.Println(msg)
-		panic(msg)
+		return errors.New(msg)
 	}
 
 	consumer, err = cluster.NewConsumer(cfg.Servers, cfg.ConsumerId, cfg.Topics, clusterCfg)
 	if err != nil {
 		msg := fmt.Sprintf("Create kafka consumer error: %v. config: %v", err, clusterCfg)
-		fmt.Println(msg)
-		panic(msg)
+		return errors.New(msg)
 	}
 
 	sig = make(chan os.Signal, 1)
 
-}
-
-func Start() {
-	go consume()
+	return nil
 }
 
 func consume() {
@@ -71,7 +76,6 @@ func consume() {
 		select {
 		case msg, more := <-consumer.Messages():
 			if more {
-
 				fmt.Println("kafka consumer msg: %v", *msg)
 				consumer.MarkOffset(msg, "") // mark message as processed
 			}
@@ -99,15 +103,13 @@ func Stop(s os.Signal) {
 }
 
 func Run() {
-
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt)
 
-	Start()
+	go consume()
 
 	select {
 	case s := <-signals:
 		Stop(s)
 	}
-
 }

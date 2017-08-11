@@ -1,7 +1,5 @@
 package mq
 
-var cfg *MqConfig
-
 var alipay_mq_cert = []byte(`
 -----BEGIN CERTIFICATE-----
 MIIDPDCCAqWgAwIBAgIJAMRsb0DLM1fsMA0GCSqGSIb3DQEBBQUAMHIxCzAJBgNV
@@ -24,61 +22,3 @@ DAYDVR0TBAUwAwEB/zANBgkqhkiG9w0BAQUFAAOBgQBTSz04p0AJXKl30sHw+UM/
 pQ70wChNi914c4B+SxkGUg==
 -----END CERTIFICATE-----
 `)
-
-type MqConfig struct {
-	Topics     []string
-	Servers    []string
-	Ak         string
-	Password   string
-	ConsumerId string
-	CertBytes  []byte
-}
-
-func SetConfig(config MqConfig) {
-	cfg = &config
-	cfg.CertBytes = alipay_mq_cert
-}
-
-func (m *MqConfig) SetTopics(topics ...string) {
-	for _, topic := range topics {
-		same := false
-		for _, t := range m.Topics {
-			if t == topic {
-				same = true
-				break
-			}
-		}
-		if same {
-			continue
-		}
-		m.Topics = append(m.Topics, topic)
-	}
-}
-
-func (m *MqConfig) SetServers(services ...string) {
-	for _, service := range services {
-		same := false
-		for _, s := range m.Servers {
-			if s == service {
-				same = true
-				break
-			}
-		}
-		if same {
-			continue
-		}
-		m.Servers = append(m.Servers, service)
-	}
-}
-
-func (m *MqConfig) SetAk(ak string) {
-	m.Ak = ak
-}
-
-func (m *MqConfig) SetPassword(password string) {
-	m.Password = password
-}
-
-func (m *MqConfig) SetConsumerId(consumerId string) {
-	m.ConsumerId = consumerId
-}

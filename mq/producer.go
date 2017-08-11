@@ -3,6 +3,7 @@ package mq
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 
 	"github.com/Shopify/sarama"
@@ -10,7 +11,14 @@ import (
 
 var producer sarama.SyncProducer
 
-func PrepareProducer() {
+type ProjucerConfig struct {
+	Servers   []string
+	Ak        string
+	Password  string
+	CertBytes []byte
+}
+
+func PrepareProducer(cfg *ProjucerConfig) error {
 	fmt.Print("init kafka producer\n")
 
 	var err error
@@ -24,7 +32,7 @@ func PrepareProducer() {
 	clientCertPool := x509.NewCertPool()
 	ok := clientCertPool.AppendCertsFromPEM(cfg.CertBytes)
 	if !ok {
-		panic("kafka producer failed to parse root certificate")
+		return errors.New("kafka producer failed to parse root certificate")
 	}
 
 	mqConfig.Net.TLS.Config = &tls.Config{
@@ -38,20 +46,19 @@ func PrepareProducer() {
 
 	if err = mqConfig.Validate(); err != nil {
 		msg := fmt.Sprintf("Kafka producer config invalidate. config: %v. err: %v", *cfg, err)
-		fmt.Println(msg)
-		panic(msg)
+		return errors.New(msg)
 	}
 
 	producer, err = sarama.NewSyncProducer(cfg.Servers, mqConfig)
 	if err != nil {
 		msg := fmt.Sprintf("Kafak producer create fail. err: %v", err)
-		fmt.Println(msg)
-		panic(msg)
+		return errors.New(msg)
 	}
 
+	return nil
 }
 
-func Produce(topic string, key string, content string) error {
+func SendMsg(topic string, key string, content string) error {
 	msg := &sarama.ProducerMessage{
 		Topic: topic,
 		Key:   sarama.StringEncoder(key),
@@ -60,9 +67,8 @@ func Produce(topic string, key string, content string) error {
 
 	_, _, err := producer.SendMessage(msg)
 	if err != nil {
-		msg := fmt.Sprintf("Kafka send message error. topic: %v. key: %v. content: %v", topic, key, content)
-		fmt.Println(msg)
-		return err
+		msg := fmt.Sprintf("Kafka send message error. topic: %v. key: %v. content: %v .err=%v", topic, key, content, err)
+		return errors.New(msg)
 	}
 
 	return nil

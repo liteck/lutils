@@ -31,7 +31,7 @@ type Message struct {
 	Key   string
 	Msg   string
 	Topic string
-	Time  time.time
+	Time  time.Time
 }
 
 type Notification struct {

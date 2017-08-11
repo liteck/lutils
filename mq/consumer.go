@@ -88,7 +88,7 @@ func (c *Consumer) consume() {
 			if more {
 				fmt.Println("Kafka consumer rebalance: %v", ntf)
 			}
-		case <-sig:
+		case <-c.sig:
 			fmt.Errorf("Stop consumer server...")
 			c.consumer.Close()
 			return

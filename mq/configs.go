@@ -1,5 +1,9 @@
 package mq
 
+import (
+	"time"
+)
+
 var alipay_mq_cert = []byte(`
 -----BEGIN CERTIFICATE-----
 MIIDPDCCAqWgAwIBAgIJAMRsb0DLM1fsMA0GCSqGSIb3DQEBBQUAMHIxCzAJBgNV
@@ -22,3 +26,16 @@ DAYDVR0TBAUwAwEB/zANBgkqhkiG9w0BAQUFAAOBgQBTSz04p0AJXKl30sHw+UM/
 pQ70wChNi914c4B+SxkGUg==
 -----END CERTIFICATE-----
 `)
+
+type Message struct {
+	Key   string
+	Msg   string
+	Topic string
+	Time  time.time
+}
+
+type Notification struct {
+	Claimed  map[string][]int32
+	Current  map[string][]int32
+	Released map[string][]int32
+}

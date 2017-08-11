@@ -24,9 +24,9 @@ type ConsumerConfig struct {
 type Consumer struct {
 	consumer       *cluster.Consumer
 	sig            chan os.Signal
-	OnMsgReceiver  func(*sarama.ConsumerMessage)
+	OnMsgReceiver  func(msg Message)
 	OnMsgError     func(error)
-	OnMsgRebalance func(*cluster.Notification)
+	OnMsgRebalance func(ntf Notification)
 	OnClosed       func()
 }
 
@@ -81,7 +81,12 @@ func (c *Consumer) consume() {
 		select {
 		case msg, more := <-c.consumer.Messages():
 			if more {
-				c.OnMsgReceiver(msg)
+				m := Message{}
+				m.Key = string(msg.Key)
+				m.Msg = string(msg.Value)
+				m.Time = msg.Timestamp
+				m.Topic = msg.Topic
+				c.OnMsgReceiver(m)
 				c.consumer.MarkOffset(msg, "") // mark message as processed
 			}
 		case err, more := <-c.consumer.Errors():
@@ -90,7 +95,11 @@ func (c *Consumer) consume() {
 			}
 		case ntf, more := <-c.consumer.Notifications():
 			if more {
-				c.OnMsgRebalance(ntf)
+				n := Notification{}
+				n.Claimed = ntf.Claimed
+				n.Current = ntf.Current
+				n.Released = ntf.Released
+				c.OnMsgRebalance(n)
 			}
 		case <-c.sig:
 			fmt.Errorf("Stop consumer server...")

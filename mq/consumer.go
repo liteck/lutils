@@ -22,8 +22,12 @@ type ConsumerConfig struct {
 }
 
 type Consumer struct {
-	consumer *cluster.Consumer
-	sig      chan os.Signal
+	consumer       *cluster.Consumer
+	sig            chan os.Signal
+	OnMsgReceiver  func(*sarama.ConsumerMessage)
+	OnMsgError     func(error)
+	OnMsgRebalance func(*cluster.Notification)
+	OnClosed       func()
 }
 
 func (c *Consumer) Prepare(cfg *ConsumerConfig) error {
@@ -77,24 +81,24 @@ func (c *Consumer) consume() {
 		select {
 		case msg, more := <-c.consumer.Messages():
 			if more {
-				fmt.Println("kafka consumer msg: %v", *msg)
+				c.OnMsgReceiver(msg)
 				c.consumer.MarkOffset(msg, "") // mark message as processed
 			}
 		case err, more := <-c.consumer.Errors():
 			if more {
-				fmt.Println("Kafka consumer error: %v", err.Error())
+				c.OnMsgError(err)
 			}
 		case ntf, more := <-c.consumer.Notifications():
 			if more {
-				fmt.Println("Kafka consumer rebalance: %v", ntf)
+				c.OnMsgRebalance(ntf)
 			}
 		case <-c.sig:
 			fmt.Errorf("Stop consumer server...")
+			c.OnClosed()
 			c.consumer.Close()
 			return
 		}
 	}
-
 }
 
 func (c *Consumer) Stop(s os.Signal) {

@@ -104,15 +104,13 @@ func (c *Consumer) Stop(s os.Signal) {
 }
 
 func (c *Consumer) Start() {
-	go func() {
-		signals := make(chan os.Signal, 1)
-		signal.Notify(signals, os.Interrupt)
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, os.Interrupt)
 
-		go c.consume()
+	go c.consume()
 
-		select {
-		case s := <-signals:
-			c.Stop(s)
-		}
-	}()
+	select {
+	case s := <-signals:
+		c.Stop(s)
+	}
 }

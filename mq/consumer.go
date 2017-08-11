@@ -118,7 +118,7 @@ func (c *Consumer) Stop(s os.Signal) {
 
 func (c *Consumer) Start() {
 	signals := make(chan os.Signal, 1)
-	signal.Notify(signals, os.Interrupt|os.KILL)
+	signal.Notify(signals, os.Interrupt|os.Kill)
 
 	go c.consume()
 

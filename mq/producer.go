@@ -9,8 +9,6 @@ import (
 	"github.com/Shopify/sarama"
 )
 
-var producer sarama.SyncProducer
-
 type ProjucerConfig struct {
 	Servers   []string
 	Ak        string
@@ -18,7 +16,11 @@ type ProjucerConfig struct {
 	CertBytes []byte
 }
 
-func PrepareProducer(cfg *ProjucerConfig) error {
+type Producer struct {
+	producer sarama.SyncProducer
+}
+
+func (p *Producer) Prepare(cfg *ProjucerConfig) error {
 	fmt.Print("init kafka producer\n")
 
 	var err error
@@ -49,7 +51,7 @@ func PrepareProducer(cfg *ProjucerConfig) error {
 		return errors.New(msg)
 	}
 
-	producer, err = sarama.NewSyncProducer(cfg.Servers, mqConfig)
+	p.producer, err = sarama.NewSyncProducer(cfg.Servers, mqConfig)
 	if err != nil {
 		msg := fmt.Sprintf("Kafak producer create fail. err: %v", err)
 		return errors.New(msg)
@@ -58,14 +60,14 @@ func PrepareProducer(cfg *ProjucerConfig) error {
 	return nil
 }
 
-func SendMsg(topic string, key string, content string) error {
+func (p *Producer) SendMsg(topic string, key string, content string) error {
 	msg := &sarama.ProducerMessage{
 		Topic: topic,
 		Key:   sarama.StringEncoder(key),
 		Value: sarama.StringEncoder(content),
 	}
 
-	_, _, err := producer.SendMessage(msg)
+	_, _, err := p.producer.SendMessage(msg)
 	if err != nil {
 		msg := fmt.Sprintf("Kafka send message error. topic: %v. key: %v. content: %v .err=%v", topic, key, content, err)
 		return errors.New(msg)

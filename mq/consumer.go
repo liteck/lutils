@@ -13,19 +13,20 @@ import (
 	"github.com/bsm/sarama-cluster"
 )
 
-var consumer *cluster.Consumer
-var sig chan os.Signal
-
 type ConsumerConfig struct {
 	Topics     []string
 	Servers    []string
 	Ak         string
 	Password   string
 	ConsumerId string
-	CertBytes  []byte
 }
 
-func PrepareConsumer(cfg *ConsumerConfig) error {
+type Consumer struct {
+	consumer *cluster.Consumer
+	sig      chan os.Signal
+}
+
+func (c *Consumer) Prepare(cfg *ConsumerConfig) error {
 	fmt.Println("init kafka consumer")
 
 	var err error
@@ -38,7 +39,7 @@ func PrepareConsumer(cfg *ConsumerConfig) error {
 	clusterCfg.Net.SASL.Handshake = true
 
 	clientCertPool := x509.NewCertPool()
-	ok := clientCertPool.AppendCertsFromPEM(cfg.CertBytes)
+	ok := clientCertPool.AppendCertsFromPEM(alipay_mq_cert)
 	if !ok {
 		return errors.New("kafka consumer failed to parse root certificate")
 	}
@@ -60,56 +61,58 @@ func PrepareConsumer(cfg *ConsumerConfig) error {
 		return errors.New(msg)
 	}
 
-	consumer, err = cluster.NewConsumer(cfg.Servers, cfg.ConsumerId, cfg.Topics, clusterCfg)
+	c.consumer, err = cluster.NewConsumer(cfg.Servers, cfg.ConsumerId, cfg.Topics, clusterCfg)
 	if err != nil {
 		msg := fmt.Sprintf("Create kafka consumer error: %v. config: %v", err, clusterCfg)
 		return errors.New(msg)
 	}
 
-	sig = make(chan os.Signal, 1)
+	c.sig = make(chan os.Signal, 1)
 
 	return nil
 }
 
-func consume() {
+func (c *Consumer) consume() {
 	for {
 		select {
-		case msg, more := <-consumer.Messages():
+		case msg, more := <-c.consumer.Messages():
 			if more {
 				fmt.Println("kafka consumer msg: %v", *msg)
-				consumer.MarkOffset(msg, "") // mark message as processed
+				c.consumer.MarkOffset(msg, "") // mark message as processed
 			}
-		case err, more := <-consumer.Errors():
+		case err, more := <-c.consumer.Errors():
 			if more {
 				fmt.Println("Kafka consumer error: %v", err.Error())
 			}
-		case ntf, more := <-consumer.Notifications():
+		case ntf, more := <-c.consumer.Notifications():
 			if more {
 				fmt.Println("Kafka consumer rebalance: %v", ntf)
 			}
 		case <-sig:
 			fmt.Errorf("Stop consumer server...")
-			consumer.Close()
+			c.consumer.Close()
 			return
 		}
 	}
 
 }
 
-func Stop(s os.Signal) {
+func (c *Consumer) Stop(s os.Signal) {
 	fmt.Println("Recived kafka consumer stop signal...")
-	sig <- s
+	c.sig <- s
 	fmt.Println("kafka consumer stopped!!!")
 }
 
-func Run() {
-	signals := make(chan os.Signal, 1)
-	signal.Notify(signals, os.Interrupt)
+func (c *Consumer) Start() {
+	go func() {
+		signals := make(chan os.Signal, 1)
+		signal.Notify(signals, os.Interrupt)
 
-	go consume()
+		go c.consume()
 
-	select {
-	case s := <-signals:
-		Stop(s)
-	}
+		select {
+		case s := <-signals:
+			c.Stop(s)
+		}
+	}()
 }

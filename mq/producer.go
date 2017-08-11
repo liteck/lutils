@@ -10,10 +10,9 @@ import (
 )
 
 type ProjucerConfig struct {
-	Servers   []string
-	Ak        string
-	Password  string
-	CertBytes []byte
+	Servers  []string
+	Ak       string
+	Password string
 }
 
 type Producer struct {
@@ -32,7 +31,7 @@ func (p *Producer) Prepare(cfg *ProjucerConfig) error {
 	mqConfig.Net.SASL.Handshake = true
 
 	clientCertPool := x509.NewCertPool()
-	ok := clientCertPool.AppendCertsFromPEM(cfg.CertBytes)
+	ok := clientCertPool.AppendCertsFromPEM(alipay_mq_cert)
 	if !ok {
 		return errors.New("kafka producer failed to parse root certificate")
 	}

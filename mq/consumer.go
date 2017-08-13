@@ -86,9 +86,6 @@ func (c *Consumer) consume() {
 				m.Msg = string(msg.Value)
 				m.Time = msg.Timestamp
 				m.Topic = msg.Topic
-				fmt.Println("msg : %v", m)
-				fmt.Println(string(msg.Key))
-				fmt.Println(m.Key)
 				c.OnMsgReceiver(m)
 				c.consumer.MarkOffset(msg, "") // mark message as processed
 			}

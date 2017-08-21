@@ -62,7 +62,7 @@ func (p *Producer) Prepare(cfg *ProjucerConfig) error {
 func (p *Producer) SendMsg(topic string, key string, content string) error {
 	msg := &sarama.ProducerMessage{
 		Topic: topic,
-		Key:   sarama.StringEncoder(key),
+		// Key:   sarama.StringEncoder(key),
 		Value: sarama.StringEncoder(content),
 	}
 

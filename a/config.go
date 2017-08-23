@@ -109,4 +109,5 @@ func getSecret(appid string) Secret {
 
 func init() {
 	secretLst = secretConfig{}
+	secretLst.Lst = map[string]Secret{}
 }

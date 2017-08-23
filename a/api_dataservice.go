@@ -45,8 +45,7 @@ func (b Biz_alipay_data_dataservice_bill_downloadurl_query) valid() error {
 	if len(b.BillType) == 0 {
 		return errors.New("bill_type" + CAN_NOT_NIL)
 	}
-
-	if b.BillType != "trade" || b.BillType != "signcustomer" {
+	if b.BillType != "trade" && b.BillType != "signcustomer" {
 		return errors.New("bill_type" + FORAMT_ERROR)
 	}
 

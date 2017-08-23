@@ -53,12 +53,12 @@ func (b Biz_alipay_data_dataservice_bill_downloadurl_query) valid() error {
 		return errors.New("bill_date" + CAN_NOT_NIL)
 	} else if len(b.BillDate) == 10 {
 		//日账单
-		if _, err := time.Parse("2006-01-02", b.BillDate); err == nil {
+		if _, err := time.Parse("2006-01-02", b.BillDate); err != nil {
 			return errors.New("bill_date" + FORAMT_ERROR)
 		}
 	} else if len(b.BillDate) == 7 {
 		//月账单
-		if _, err := time.Parse("2006-01", b.BillDate); err == nil {
+		if _, err := time.Parse("2006-01", b.BillDate); err != nil {
 			return errors.New("bill_date" + FORAMT_ERROR)
 		}
 	} else {

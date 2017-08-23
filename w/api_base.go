@@ -84,10 +84,10 @@ func (w *WechatApi) SetAppId(app_id string) error {
 		return ErrAppIdNil
 	}
 
-	if v, ok := secretLst[w.params.AppId]; !ok {
+	if s := secretLst.Get(w.params.AppId); len(s.AppSecret) == 0 {
 		return ErrSecretNil
 	} else {
-		w.params.Secret = v.AppSecret
+		w.params.Secret = s.AppSecret
 	}
 	return nil
 }
@@ -109,10 +109,10 @@ func (w *WechatApi) getSecret() (*Secret, error) {
 		return nil, ErrAppIdNil
 	}
 
-	if v, ok := secretLst[w.params.AppId]; !ok {
+	if s := secretLst.Get(w.params.AppId); len(s.AppSecret) == 0 {
 		return nil, ErrSecretNil
 	} else {
-		return &v, nil
+		return &s, nil
 	}
 }
 

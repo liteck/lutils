@@ -66,21 +66,21 @@ type secretConfig struct {
 	Lock sync.Mutex
 }
 
-func (s secretConfig) Get(k string) string {
+func (s secretConfig) Get(k string) Secret {
 	s.Lock.Lock()
-	defer s.Lock.UnLock()
+	defer s.Lock.Unlock()
 	return s.Lst[k]
 }
 
-func (s secretConfig) Set(k string, secret Secret) {
+func (s secretConfig) Set(k string, v Secret) {
 	s.Lock.Lock()
-	defer d.Lock.UnLock()
+	defer s.Lock.Unlock()
 	s.Lst[k] = v
 }
 
 func (s secretConfig) Del(k string) {
 	s.Lock.Lock()
-	defer d.Lock.UnLock()
+	defer s.Lock.Unlock()
 	delete(s.Lst, k)
 }
 

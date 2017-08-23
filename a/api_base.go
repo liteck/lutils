@@ -147,7 +147,7 @@ func (a *AlipayApi) SetAppId(app_id string) error {
 		return ErrAppIdNil
 	}
 
-	if _, ok := secretLst[a.params.AppId]; !ok {
+	if s := secretLst.Get(a.params.AppId); len(s.AliPubRSA) == 0 {
 		return ErrSecretNil
 	}
 	return nil

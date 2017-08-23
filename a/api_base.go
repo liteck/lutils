@@ -153,6 +153,10 @@ func (a *AlipayApi) SetAppId(app_id string) error {
 	return nil
 }
 
+func (a *AlipayApi) SetAppAuthToken(token string) {
+	a.params.AppAuthToken = token
+}
+
 func (a *AlipayApi) SetBizContent(biz bizInterface) error {
 	//有几个接口要独立处理
 	if reflect.TypeOf(biz).Name() == reflect.TypeOf(Biz_alipay_system_oauth_token{}).Name() {

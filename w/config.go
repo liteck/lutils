@@ -37,30 +37,7 @@ func (s *Secret) valid() error {
 	return nil
 }
 
-var secretLst secretConfig
-
-type secretConfig struct {
-	Lst  map[string]Secret
-	Lock sync.Mutex
-}
-
-func (s secretConfig) Get(k string) Secret {
-	s.Lock.Lock()
-	defer s.Lock.Unlock()
-	return s.Lst[k]
-}
-
-func (s secretConfig) Set(k string, v Secret) {
-	s.Lock.Lock()
-	defer s.Lock.Unlock()
-	s.Lst[k] = v
-}
-
-func (s secretConfig) Del(k string) {
-	s.Lock.Lock()
-	defer s.Lock.Unlock()
-	delete(s.Lst, k)
-}
+var secretLst sync.Map
 
 func RegisterSecret(s ...Secret) error {
 	if len(s) == 0 {
@@ -71,21 +48,24 @@ func RegisterSecret(s ...Secret) error {
 		if err := v.valid(); err != nil {
 			return err
 		}
-		secretLst.Set(v.AppId, v)
+		secretLst.Store(v.AppId, v)
 	}
 
 	return nil
 }
 
 func DeleteSecret(app_id string) {
-	secretLst.Del(app_id)
+	secretLst.Delete(app_id)
 }
 
 func getSecret(appid string) Secret {
-	return secretLst.Get(appid)
+	if v, ok := secretLst.Load(appid); !ok || v == nil {
+		return Secret{}
+	} else {
+		return v.(Secret)
+	}
 }
 
 func init() {
-	secretLst = secretConfig{}
-	secretLst.Lst = map[string]Secret{}
+	secretLst = sync.Map{}
 }

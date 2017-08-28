@@ -137,6 +137,7 @@ func GetSupportApis() string {
 
 type AlipayApi struct {
 	params    requestParams
+	secret    Secret
 	apiname   func() string
 	apimethod func() string
 }
@@ -145,10 +146,6 @@ func (a *AlipayApi) SetAppId(app_id string) error {
 	a.params.AppId = app_id
 	if len(a.params.AppId) == 0 {
 		return ErrAppIdNil
-	}
-
-	if s := secretLst.Get(a.params.AppId); len(s.AliPubRSA) == 0 {
-		return ErrSecretNil
 	}
 	return nil
 }
@@ -267,7 +264,7 @@ func (a *AlipayApi) biz_to_string(b bizInterface) (string, error) {
 
 func (a *AlipayApi) sign(c string) (sign string, err error) {
 	//签名
-	s := getSecret(a.params.AppId)
+	s := a.secret
 	block, _ := pem.Decode(s.PrivRSA)
 	if block == nil {
 		return "", errors.New("privateKey error!")
@@ -298,7 +295,7 @@ func (a *AlipayApi) verifySign(s, origin_sign, method_key string) bool {
 		return false
 	}
 	tobe_signed := s[4+len(method_key) : sign_start_index]
-	block, _ := pem.Decode(getSecret(a.params.AppId).AliPubRSA)
+	block, _ := pem.Decode(a.secret.AliPubRSA)
 	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
 	if err != nil {
 		fmt.Printf("Failed to parse RSA public key: %s\n", err)
@@ -353,6 +350,11 @@ func (a *AlipayApi) Run(resp responseInterface) error {
 	logs.DEBUG("=====================ALIPAY REQUEST START=====================")
 	logs.DEBUG(fmt.Sprintf("==[沙盒模式]==[%v]", conf.SandBoxEnable))
 	logs.DEBUG(fmt.Sprintf("==[调用方法]==[%s]:[%s]", a.apiname(), a.apimethod()))
+	if s := getSecret(a.params.AppId); len(s.Pid) == 0 {
+		return ErrSecretNil
+	} else {
+		a.secret = s
+	}
 	a.params.Method = a.apimethod()
 	if err := a.params.valid(); err != nil {
 		return err

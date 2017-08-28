@@ -73,6 +73,7 @@ func GetSupportApis() string {
 type WechatApi struct {
 	params    requestParams
 	req       reqInterface
+	secret    Secret
 	apiurl    func() string
 	apiname   func() string
 	apimethod func() string
@@ -82,12 +83,6 @@ func (w *WechatApi) SetAppId(app_id string) error {
 	w.params.AppId = app_id
 	if len(w.params.AppId) == 0 {
 		return ErrAppIdNil
-	}
-
-	if s := secretLst.Get(w.params.AppId); len(s.AppSecret) == 0 {
-		return ErrSecretNil
-	} else {
-		w.params.Secret = s.AppSecret
 	}
 	return nil
 }
@@ -102,18 +97,6 @@ func (w *WechatApi) SetReqContent(v reqInterface) error {
 
 func (w *WechatApi) apiMethod() string {
 	return "POST"
-}
-
-func (w *WechatApi) getSecret() (*Secret, error) {
-	if len(w.params.AppId) == 0 {
-		return nil, ErrAppIdNil
-	}
-
-	if s := secretLst.Get(w.params.AppId); len(s.AppSecret) == 0 {
-		return nil, ErrSecretNil
-	} else {
-		return &s, nil
-	}
 }
 
 func (w *WechatApi) struct_to_map() map[string]interface{} {
@@ -192,6 +175,12 @@ func (w *WechatApi) Run(resp responseInterface) error {
 	defer logs.DEBUG("=====================WECHAT REQUEST END=====================")
 	logs.DEBUG("=====================WECHAT REQUEST START=====================")
 	logs.DEBUG(fmt.Sprintf("==[调用方法]==[%s]:[%s]", w.apiname(), w.apiurl()))
+
+	if s := getSecret(w.params.AppId); len(s.AppSecret) == 0 {
+		return ErrSecretNil
+	} else {
+		w.secret = s
+	}
 
 	if err := w.params.valid(); err != nil {
 		return err
